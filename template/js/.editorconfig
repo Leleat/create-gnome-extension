@@ -1,0 +1,30 @@
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+
+indent_style = space
+trim_trailing_whitespace = true
+insert_final_newline = true
+
+[*.[ch]]
+indent_size = 2
+
+[*.gresource.xml]
+indent_size = 2
+
+[*.js]
+indent_size = 4
+
+[*.json]
+indent_size = 2
+
+[*.sh]
+indent_style = tab
+
+[*.ui]
+indent_size = 2
+
+[*.{yml,yaml}]
+indent_size = 2

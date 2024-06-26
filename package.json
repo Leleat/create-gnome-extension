@@ -1,0 +1,31 @@
+{
+  "name": "create-gnome-extension",
+  "version": "0.1.0",
+  "description": "Scaffolding tool for GNOME Shell extensions",
+  "bin": {
+    "create-gnome-extension": "index.js"
+  },
+  "type": "module",
+  "keywords": [
+    "GNOME",
+    "GNOME Shell",
+    "GJS",
+    "Extension"
+  ],
+  "author": "Leleat",
+  "license": "GPL-2.0-or-later",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/leleat/create-gnome-extension.git"
+  },
+  "bugs": {
+    "url": "https://github.com/leleat/create-gnome-extension/issues"
+  },
+  "homepage": "https://github.com/leleat/create-gnome-extension",
+  "devDependencies": {
+    "@eslint/js": "^9.3.0",
+    "eslint": "^9.3.0",
+    "eslint-config-prettier": "^9.1.0",
+    "prettier": "^3.2.5"
+  }
+}

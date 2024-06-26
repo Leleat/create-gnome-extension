@@ -1,0 +1,7 @@
+*.gresource*
+*.shell-extension/
+*.zip
+*~
+gschemas.compiled
+locale/
+node_modules/
