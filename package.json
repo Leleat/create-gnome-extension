@@ -1,6 +1,6 @@
 {
   "name": "create-gnome-extension",
-  "version": "0.1.0",
+  "version": "0.1.5",
   "description": "Scaffolding tool for GNOME Shell extensions",
   "bin": {
     "create-gnome-extension": "index.js"
