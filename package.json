@@ -5,6 +5,11 @@
   "bin": {
     "create-gnome-extension": "index.js"
   },
+  "scripts": {},
+  "files": [
+    "template",
+    "index.js"
+  ],
   "type": "module",
   "keywords": [
     "GNOME",
