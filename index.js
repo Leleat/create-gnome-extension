@@ -390,7 +390,7 @@ async function createMandatoryFiles() {
  * @param {string} [param.errorMessage] - the error message shown to the user, if
  *      the input doesn't pass the validation function
  *
- * @returns {string} - the user's input or the default value if the user doesn't
+ * @returns {Promise<string>} - the user's input or the default value if the user doesn't
  *      provide an input
  */
 async function prompt(
@@ -437,7 +437,8 @@ async function prompt(
  * @param {string} prompt - the prompt message shown to the user
  * @param {*} defaultValue - the value that is returned, if the user doesn't
  *      provide an input
- * @returns {boolean} - the user's choice
+ *
+ * @returns {Promise<boolean>} - the user's choice
  */
 async function promptYesOrNo(prompt, defaultValue = false) {
     const option = defaultValue ? 'Y/n' : 'y/N';
