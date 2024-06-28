@@ -12,13 +12,13 @@ const RED = '\x1b[31m';
 const YELLOW = '\x1b[33m';
 const GREEN = '\x1b[92m';
 
-const CWD = process.cwd();
+const TEMPLATE_PATH = path.resolve(import.meta.dirname, 'template');
 const [METADATA_JSON, PACKAGE_JSON] = await Promise.all([
     fs
-        .readFile(path.join(CWD, 'template', 'metadata.json'), 'utf-8')
+        .readFile(path.join(TEMPLATE_PATH, 'metadata.json'), 'utf-8')
         .then(JSON.parse),
     fs
-        .readFile(path.join(CWD, 'template', 'js', 'package.json'), 'utf-8')
+        .readFile(path.join(TEMPLATE_PATH, 'js', 'package.json'), 'utf-8')
         .then(JSON.parse),
 ]);
 const PROJECT_INFO = {
@@ -53,12 +53,12 @@ await Promise.all([
 if (PROJECT_INFO['include-eslint']) {
     await Promise.all([
         fs.cp(
-            path.join(CWD, 'template', 'js', 'lint'),
+            path.join(TEMPLATE_PATH, 'js', 'lint'),
             path.join(PROJECT_INFO['target-dir'], 'lint'),
             {recursive: true},
         ),
         fs.copyFile(
-            path.join(CWD, 'template', 'js', 'eslint.config.js'),
+            path.join(TEMPLATE_PATH, 'js', 'eslint.config.js'),
             path.join(PROJECT_INFO['target-dir'], '.eslint.config.js'),
         ),
     ]);
@@ -72,11 +72,11 @@ if (PROJECT_INFO['include-eslint']) {
 if (PROJECT_INFO['include-prettier']) {
     await Promise.all([
         fs.copyFile(
-            path.join(CWD, 'template', 'js', 'prettier.config.js'),
+            path.join(TEMPLATE_PATH, 'js', 'prettier.config.js'),
             path.join(PROJECT_INFO['target-dir'], 'prettier.config.js'),
         ),
         fs.copyFile(
-            path.join(CWD, 'template', 'js', '.prettierignore'),
+            path.join(TEMPLATE_PATH, 'js', '.prettierignore'),
             path.join(PROJECT_INFO['target-dir'], '.prettierignore'),
         ),
     ]);
@@ -93,11 +93,11 @@ if (PROJECT_INFO['include-prettier']) {
 if (PROJECT_INFO['include-types']) {
     await Promise.all([
         fs.copyFile(
-            path.join(CWD, 'template', 'js', 'jsconfig.json'),
+            path.join(TEMPLATE_PATH, 'js', 'jsconfig.json'),
             path.join(PROJECT_INFO['target-dir'], 'jsconfig.json'),
         ),
         fs.copyFile(
-            path.join(CWD, 'template', 'js', 'ambient.d.ts'),
+            path.join(TEMPLATE_PATH, 'js', 'ambient.d.ts'),
             path.join(PROJECT_INFO['target-dir'], 'ambient.d.ts'),
         ),
     ]);
@@ -109,18 +109,12 @@ if (PROJECT_INFO['include-types']) {
 if (PROJECT_INFO['include-translations']) {
     await Promise.all([
         fs.cp(
-            path.join(CWD, 'template', 'js', 'po'),
+            path.join(TEMPLATE_PATH, 'js', 'po'),
             path.join(PROJECT_INFO['target-dir'], 'po'),
             {recursive: true},
         ),
         fs.copyFile(
-            path.join(
-                CWD,
-                'template',
-                'js',
-                'scripts',
-                'update-translations.sh',
-            ),
+            path.join(TEMPLATE_PATH, 'js', 'scripts', 'update-translations.sh'),
             path.join(
                 PROJECT_INFO['target-dir'],
                 'scripts',
@@ -164,7 +158,7 @@ if (PROJECT_INFO['include-prefs']) {
 
     if (PROJECT_INFO['include-prefs-window']) {
         const prefsFile = await fs.readFile(
-            path.join(CWD, 'template', 'js', 'src', 'prefs.js'),
+            path.join(TEMPLATE_PATH, 'js', 'src', 'prefs.js'),
             'utf-8',
         );
 
@@ -187,7 +181,7 @@ if (PROJECT_INFO['include-stylesheet']) {
 
 if (PROJECT_INFO['include-resources']) {
     await fs.cp(
-        path.join(CWD, 'template', 'js', 'data'),
+        path.join(TEMPLATE_PATH, 'js', 'data'),
         path.join(PROJECT_INFO['target-dir'], 'data'),
         {recursive: true},
     );
@@ -347,19 +341,19 @@ async function createMandatoryFiles() {
 
     const [extensionJsFile] = await Promise.all([
         fs.readFile(
-            path.join(CWD, 'template', 'js', 'src', 'extension.js'),
+            path.join(TEMPLATE_PATH, 'js', 'src', 'extension.js'),
             'utf-8',
         ),
         fs.copyFile(
-            path.join(CWD, 'template', 'js', '.gitignore'),
+            path.join(TEMPLATE_PATH, 'js', '_gitignore'),
             path.join(PROJECT_INFO['target-dir'], '.gitignore'),
         ),
         fs.copyFile(
-            path.join(CWD, 'template', 'js', '.editorconfig'),
+            path.join(TEMPLATE_PATH, 'js', '.editorconfig'),
             path.join(PROJECT_INFO['target-dir'], '.editorconfig'),
         ),
         fs.copyFile(
-            path.join(CWD, 'template', 'js', 'scripts', 'build.sh'),
+            path.join(TEMPLATE_PATH, 'js', 'scripts', 'build.sh'),
             path.join(PROJECT_INFO['target-dir'], 'scripts', 'build.sh'),
         ),
         fs.writeFile(
@@ -371,7 +365,7 @@ async function createMandatoryFiles() {
             JSON.stringify(PACKAGE_JSON, null, 2),
         ),
         fs.copyFile(
-            path.join(CWD, 'README.md'),
+            path.join(import.meta.dirname, 'README.md'),
             path.join(PROJECT_INFO['target-dir'], 'README.md'),
         ),
     ]);
