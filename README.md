@@ -17,7 +17,7 @@ If you need more help, you can use the following channels
 To use `create-gnome-extension` run the following command in a terminal.
 
 ```sh
-npm create gnome-extension
+npm create gnome-extension@latest
 ```
 
 ## Project Structure
