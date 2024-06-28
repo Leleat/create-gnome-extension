@@ -481,7 +481,12 @@ async function promptYesOrNo(prompt, defaultValue = false) {
  * @returns {string} the string in kebab-case
  */
 function toKebabCase(string) {
-    return string.replace(/[ _]+/g, '-').toLowerCase();
+    return string
+        .split(/[ _-]/)
+        .map((v) => v.trim())
+        .filter((v) => v)
+        .join('-')
+        .toLowerCase();
 }
 
 /**
@@ -492,8 +497,9 @@ function toKebabCase(string) {
  */
 function toPascalCase(string) {
     return string
-        .trim()
         .split(/[ _-]/)
+        .map((v) => v.trim())
+        .filter((v) => v)
         .map((word) => word[0].toUpperCase() + word.slice(1).toLowerCase())
         .join('');
 }
