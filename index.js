@@ -56,7 +56,7 @@ if (PROJECT_INFO['use-eslint']) {
         ),
         fs.copyFile(
             path.join(TEMPLATE_PATH, 'js', 'eslint.config.js'),
-            path.join(PROJECT_INFO['target-dir'], '.eslint.config.js'),
+            path.join(PROJECT_INFO['target-dir'], 'eslint.config.js'),
         ),
     ]);
 } else {
