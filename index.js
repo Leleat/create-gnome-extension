@@ -43,6 +43,19 @@ const PROJECT_INFO = {
 
 await collectProjectInfo();
 
+METADATA_JSON['name'] = PROJECT_INFO['project-name'];
+METADATA_JSON['description'] = PROJECT_INFO['description'];
+METADATA_JSON['uuid'] = PROJECT_INFO['uuid'];
+METADATA_JSON['shell-version'] = PROJECT_INFO['shell-version'];
+
+if (PROJECT_INFO['version-name']) {
+    METADATA_JSON['version-name'] = PROJECT_INFO['version-name'];
+}
+
+if (PROJECT_INFO['home-page']) {
+    METADATA_JSON['url'] = PROJECT_INFO['home-page'];
+}
+
 await Promise.all([
     fs.mkdir(path.join(PROJECT_INFO['target-dir'], 'src'), {recursive: true}),
     fs.mkdir(path.join(PROJECT_INFO['target-dir'], 'scripts'), {
@@ -187,7 +200,46 @@ if (PROJECT_INFO['include-resources']) {
     );
 }
 
-await createMandatoryFiles();
+await Promise.all([
+    fs
+        .readFile(
+            path.join(TEMPLATE_PATH, 'js', 'src', 'extension.js'),
+            'utf-8',
+        )
+        .then(async (extensionJsFile) => {
+            await fs.writeFile(
+                path.join(PROJECT_INFO['target-dir'], 'src', 'extension.js'),
+                extensionJsFile.replace(
+                    /\$PLACEHOLDER\$/,
+                    toPascalCase(PROJECT_INFO['project-name']),
+                ),
+            );
+        }),
+    fs.copyFile(
+        path.join(TEMPLATE_PATH, 'js', '_gitignore'),
+        path.join(PROJECT_INFO['target-dir'], '.gitignore'),
+    ),
+    fs.copyFile(
+        path.join(TEMPLATE_PATH, 'js', '.editorconfig'),
+        path.join(PROJECT_INFO['target-dir'], '.editorconfig'),
+    ),
+    fs.copyFile(
+        path.join(TEMPLATE_PATH, 'js', 'scripts', 'build.sh'),
+        path.join(PROJECT_INFO['target-dir'], 'scripts', 'build.sh'),
+    ),
+    fs.writeFile(
+        path.join(PROJECT_INFO['target-dir'], 'metadata.json'),
+        JSON.stringify(METADATA_JSON, null, 2),
+    ),
+    fs.writeFile(
+        path.join(PROJECT_INFO['target-dir'], 'package.json'),
+        JSON.stringify(PACKAGE_JSON, null, 2),
+    ),
+    fs.copyFile(
+        path.join(import.meta.dirname, 'README.md'),
+        path.join(PROJECT_INFO['target-dir'], 'README.md'),
+    ),
+]);
 
 console.log(`${GREEN}Project created at ${PROJECT_INFO['target-dir']}${RESET}`);
 
@@ -317,66 +369,6 @@ async function collectProjectInfo() {
     PROJECT_INFO['include-eslint'] = await promptYesOrNo('Add ESlint?');
 
     PROJECT_INFO['include-prettier'] = await promptYesOrNo('Add Prettier?');
-}
-
-/**
- * Creates the mandatory files for the extension project.
- */
-async function createMandatoryFiles() {
-    METADATA_JSON['name'] = PROJECT_INFO['project-name'];
-    METADATA_JSON['uuid'] = PROJECT_INFO['uuid'];
-    METADATA_JSON['shell-version'] = PROJECT_INFO['shell-version'];
-
-    if (PROJECT_INFO['description']) {
-        METADATA_JSON['description'] = PROJECT_INFO['description'];
-    }
-
-    if (PROJECT_INFO['version-name']) {
-        METADATA_JSON['version-name'] = PROJECT_INFO['version-name'];
-    }
-
-    if (PROJECT_INFO['home-page']) {
-        METADATA_JSON['url'] = PROJECT_INFO['home-page'];
-    }
-
-    const [extensionJsFile] = await Promise.all([
-        fs.readFile(
-            path.join(TEMPLATE_PATH, 'js', 'src', 'extension.js'),
-            'utf-8',
-        ),
-        fs.copyFile(
-            path.join(TEMPLATE_PATH, 'js', '_gitignore'),
-            path.join(PROJECT_INFO['target-dir'], '.gitignore'),
-        ),
-        fs.copyFile(
-            path.join(TEMPLATE_PATH, 'js', '.editorconfig'),
-            path.join(PROJECT_INFO['target-dir'], '.editorconfig'),
-        ),
-        fs.copyFile(
-            path.join(TEMPLATE_PATH, 'js', 'scripts', 'build.sh'),
-            path.join(PROJECT_INFO['target-dir'], 'scripts', 'build.sh'),
-        ),
-        fs.writeFile(
-            path.join(PROJECT_INFO['target-dir'], 'metadata.json'),
-            JSON.stringify(METADATA_JSON, null, 2),
-        ),
-        fs.writeFile(
-            path.join(PROJECT_INFO['target-dir'], 'package.json'),
-            JSON.stringify(PACKAGE_JSON, null, 2),
-        ),
-        fs.copyFile(
-            path.join(import.meta.dirname, 'README.md'),
-            path.join(PROJECT_INFO['target-dir'], 'README.md'),
-        ),
-    ]);
-
-    await fs.writeFile(
-        path.join(PROJECT_INFO['target-dir'], 'src', 'extension.js'),
-        extensionJsFile.replace(
-            /\$PLACEHOLDER\$/,
-            toPascalCase(PROJECT_INFO['project-name']),
-        ),
-    );
 }
 
 /**
