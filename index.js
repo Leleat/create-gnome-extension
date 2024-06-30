@@ -83,17 +83,18 @@ await Promise.all([
 ]);
 
 if (PROJECT_INFO['use-eslint']) {
-    await Promise.all([
-        fs.cp(
+    if (!PROJECT_INFO['use-typescript']) {
+        await fs.cp(
             path.join(TEMPLATE_PATH, 'template.js', 'lint'),
             path.join(PROJECT_INFO['target-dir'], 'lint'),
             {recursive: true},
-        ),
-        fs.copyFile(
-            path.join(TEMPLATE_PATH, TEMPLATE_LANG_DIR, 'eslint.config.js'),
-            path.join(PROJECT_INFO['target-dir'], 'eslint.config.js'),
-        ),
-    ]);
+        );
+    }
+
+    await fs.copyFile(
+        path.join(TEMPLATE_PATH, TEMPLATE_LANG_DIR, 'eslint.config.js'),
+        path.join(PROJECT_INFO['target-dir'], 'eslint.config.js'),
+    );
 } else {
     delete PACKAGE_JSON.scripts['check:lint'];
     delete PACKAGE_JSON.devDependencies['@eslint/js'];
