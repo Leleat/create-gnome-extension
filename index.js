@@ -336,6 +336,8 @@ function getDefaultForOption(option) {
 
         case 'use-eslint':
         case 'use-prettier':
+            return true;
+
         case 'use-types':
         case 'use-typescript':
         case 'use-translations':
@@ -475,6 +477,7 @@ async function queryMissingProjectInfo() {
             await prompt('Target directory:', {
                 validate: async (input) =>
                     await isValidOption('target-dir', input),
+                defaultValue: getDefaultForOption('target-dir'),
                 onError: 'Enter a path to a directory that does not exist.',
             }),
         );
@@ -490,6 +493,7 @@ async function queryMissingProjectInfo() {
         PROJECT_INFO['project-name'] = await prompt('Project name:', {
             validate: async (input) =>
                 await isValidOption('project-name', input),
+            defaultValue: getDefaultForOption('project-name'),
             onError: 'Project name cannot be empty.',
         });
     }
@@ -504,6 +508,7 @@ async function queryMissingProjectInfo() {
         PROJECT_INFO['description'] = await prompt('Description:', {
             validate: async (input) =>
                 await isValidOption('description', input),
+            defaultValue: getDefaultForOption('description'),
             onError: 'Description cannot be empty.',
         });
     }
@@ -534,7 +539,9 @@ async function queryMissingProjectInfo() {
         console.log(
             `${FAINT}Optionally, enter a homepage, for example, a Git repository${RESET}`,
         );
-        PROJECT_INFO['home-page'] = await prompt('Homepage:');
+        PROJECT_INFO['home-page'] = await prompt('Homepage:', {
+            defaultValue: getDefaultForOption('home-page'),
+        });
     }
 
     if (
@@ -546,6 +553,7 @@ async function queryMissingProjectInfo() {
         );
         PROJECT_INFO['uuid'] = await prompt('UUID:', {
             validate: async (input) => await isValidOption('uuid', input),
+            defaultValue: getDefaultForOption('uuid'),
             onError: 'UUID cannot be empty.',
         });
     }
@@ -561,6 +569,7 @@ async function queryMissingProjectInfo() {
             'Supported GNOME Shell versions:',
             {
                 validate: (input) => isValidOption('shell-version', input),
+                defaultValue: getDefaultForOption('shell-version'),
                 onError:
                     'The supported GNOME Shell versions should be a comma-separated list of numbers >= 45.',
             },
@@ -576,14 +585,21 @@ async function queryMissingProjectInfo() {
         useOption('use-typescript') &&
         !(await isValidOption('use-typescript', PROJECT_INFO['use-typescript']))
     ) {
-        PROJECT_INFO['use-typescript'] = await promptYesOrNo('Add TypeScript?');
+        PROJECT_INFO['use-typescript'] = await promptYesOrNo(
+            'Add TypeScript?',
+            {
+                defaultValue: getDefaultForOption('use-typescript'),
+            },
+        );
     }
 
     if (
         useOption('use-prefs') &&
         !(await isValidOption('use-prefs', PROJECT_INFO['use-prefs']))
     ) {
-        PROJECT_INFO['use-prefs'] = await promptYesOrNo('Add preferences?');
+        PROJECT_INFO['use-prefs'] = await promptYesOrNo('Add preferences?', {
+            defaultValue: getDefaultForOption('use-prefs'),
+        });
     }
 
     if (
@@ -610,6 +626,9 @@ async function queryMissingProjectInfo() {
     ) {
         PROJECT_INFO['use-prefs-window'] = await promptYesOrNo(
             'Add preference window?',
+            {
+                defaultValue: getDefaultForOption('use-prefs-window'),
+            },
         );
     }
 
@@ -620,8 +639,12 @@ async function queryMissingProjectInfo() {
             PROJECT_INFO['use-translations'],
         ))
     ) {
-        PROJECT_INFO['use-translations'] =
-            await promptYesOrNo('Add translations?');
+        PROJECT_INFO['use-translations'] = await promptYesOrNo(
+            'Add translations?',
+            {
+                defaultValue: getDefaultForOption('use-translations'),
+            },
+        );
     }
 
     if (
@@ -637,15 +660,21 @@ async function queryMissingProjectInfo() {
         useOption('use-stylesheet') &&
         !(await isValidOption('use-stylesheet', PROJECT_INFO['use-stylesheet']))
     ) {
-        PROJECT_INFO['use-stylesheet'] =
-            await promptYesOrNo('Add a stylesheet?');
+        PROJECT_INFO['use-stylesheet'] = await promptYesOrNo(
+            'Add a stylesheet?',
+            {
+                defaultValue: getDefaultForOption('use-stylesheet'),
+            },
+        );
     }
 
     if (
         useOption('use-resources') &&
         !(await isValidOption('use-resources', PROJECT_INFO['use-resources']))
     ) {
-        PROJECT_INFO['use-resources'] = await promptYesOrNo('Use GResources?');
+        PROJECT_INFO['use-resources'] = await promptYesOrNo('Use GResources?', {
+            defaultValue: getDefaultForOption('use-resources'),
+        });
     }
 
     if (
@@ -654,6 +683,9 @@ async function queryMissingProjectInfo() {
     ) {
         PROJECT_INFO['use-types'] = await promptYesOrNo(
             'Add types to JavaScript with gjsify/ts-for-gir?',
+            {
+                defaultValue: getDefaultForOption('use-types'),
+            },
         );
     }
 
@@ -661,14 +693,18 @@ async function queryMissingProjectInfo() {
         useOption('use-eslint') &&
         !(await isValidOption('use-eslint', PROJECT_INFO['use-eslint']))
     ) {
-        PROJECT_INFO['use-eslint'] = await promptYesOrNo('Add ESlint?');
+        PROJECT_INFO['use-eslint'] = await promptYesOrNo('Add ESlint?', {
+            defaultValue: getDefaultForOption('use-eslint'),
+        });
     }
 
     if (
         useOption('use-prettier') &&
         !(await isValidOption('use-prettier', PROJECT_INFO['use-prettier']))
     ) {
-        PROJECT_INFO['use-prettier'] = await promptYesOrNo('Add Prettier?');
+        PROJECT_INFO['use-prettier'] = await promptYesOrNo('Add Prettier?', {
+            defaultValue: getDefaultForOption('use-prettier'),
+        });
     }
 }
 
