@@ -13,7 +13,7 @@ const RED = '\x1b[31m';
 const YELLOW = '\x1b[33m';
 const GREEN = '\x1b[92m';
 
-const PROJECT_INFO = parseCliArguments({
+const PROJECT_INFO = await parseCliArguments({
     'target-dir': {type: 'string'},
     'project-name': {type: 'string'},
     description: {type: 'string'},
@@ -26,6 +26,8 @@ const PROJECT_INFO = parseCliArguments({
     'shell-version': {type: 'string'},
     'use-typescript': {type: 'boolean'},
     'no-use-typescript': {type: 'boolean'},
+    'use-esbuild': {type: 'boolean'},
+    'no-use-esbuild': {type: 'boolean'},
     'use-eslint': {type: 'boolean'},
     'no-use-eslint': {type: 'boolean'},
     'use-prettier': {type: 'boolean'},
@@ -50,13 +52,19 @@ const TEMPLATE_PATH = path.resolve(import.meta.dirname, 'template');
 const TEMPLATE_LANG_DIR = PROJECT_INFO['use-typescript']
     ? 'template.ts'
     : 'template.js';
-const [METADATA_JSON, PACKAGE_JSON] = await Promise.all([
+const [METADATA_JSON, PACKAGE_JSON, TSCONFIG_JSON] = await Promise.all([
     fs
         .readFile(path.join(TEMPLATE_PATH, 'metadata.json'), 'utf-8')
         .then(JSON.parse),
     fs
         .readFile(
             path.join(TEMPLATE_PATH, TEMPLATE_LANG_DIR, 'package.json'),
+            'utf-8',
+        )
+        .then(JSON.parse),
+    fs
+        .readFile(
+            path.join(TEMPLATE_PATH, 'template.ts', 'tsconfig.json'),
             'utf-8',
         )
         .then(JSON.parse),
@@ -132,26 +140,30 @@ if (PROJECT_INFO['use-prettier']) {
 
 if (PROJECT_INFO['use-types'] || PROJECT_INFO['use-typescript']) {
     if (PROJECT_INFO['use-typescript']) {
+        if (PROJECT_INFO['use-esbuild']) {
+            await fs.copyFile(
+                path.join(TEMPLATE_PATH, 'scripts', 'esbuild.js'),
+                path.join(PROJECT_INFO['target-dir'], 'scripts', 'esbuild.js'),
+            );
+        } else {
+            delete TSCONFIG_JSON['compilerOptions']['isolatedModules'];
+        }
+
+        await fs.writeFile(
+            path.join(PROJECT_INFO['target-dir'], 'tsconfig.json'),
+            JSON.stringify(TSCONFIG_JSON, null, 2),
+        );
+    } else {
         await fs.copyFile(
-            path.join(TEMPLATE_PATH, 'scripts', 'esbuild.js'),
-            path.join(PROJECT_INFO['target-dir'], 'scripts', 'esbuild.js'),
+            path.join(TEMPLATE_PATH, 'template.js', 'jsconfig.json'),
+            path.join(PROJECT_INFO['target-dir'], 'jsconfig.json'),
         );
     }
 
-    const configFile = PROJECT_INFO['use-typescript']
-        ? 'tsconfig.json'
-        : 'jsconfig.json';
-
-    await Promise.all([
-        fs.copyFile(
-            path.join(TEMPLATE_PATH, TEMPLATE_LANG_DIR, configFile),
-            path.join(PROJECT_INFO['target-dir'], configFile),
-        ),
-        fs.copyFile(
-            path.join(TEMPLATE_PATH, 'ambient.d.ts'),
-            path.join(PROJECT_INFO['target-dir'], 'ambient.d.ts'),
-        ),
-    ]);
+    await fs.copyFile(
+        path.join(TEMPLATE_PATH, 'ambient.d.ts'),
+        path.join(PROJECT_INFO['target-dir'], 'ambient.d.ts'),
+    );
 } else {
     delete PACKAGE_JSON.devDependencies['@girs/gjs'];
     delete PACKAGE_JSON.devDependencies['@girs/gnome-shell'];
@@ -335,6 +347,7 @@ function getDefaultForOption(option) {
         case 'settings-schema':
             return PROJECT_INFO['uuid'];
 
+        case 'use-esbuild':
         case 'use-eslint':
         case 'use-prettier':
             return true;
@@ -374,6 +387,7 @@ async function isValidOption(option, value) {
         case 'settings-schema':
             return typeof value === 'string';
 
+        case 'use-esbuild':
         case 'use-eslint':
         case 'use-prettier':
         case 'use-types':
@@ -383,7 +397,7 @@ async function isValidOption(option, value) {
         case 'use-prefs-window':
         case 'use-stylesheet':
         case 'use-resources':
-            return true;
+            return typeof value === 'boolean';
 
         case 'project-name':
         case 'description':
@@ -424,9 +438,9 @@ async function isValidOption(option, value) {
  *
  * @param {object} options - the options object to pass to `parseArgs`
  *
- * @returns {object} - the parsed CLI arguments
+ * @returns {Promise<object>} - the parsed CLI arguments
  */
-function parseCliArguments(options) {
+async function parseCliArguments(options) {
     const {
         values: argv,
         positionals,
@@ -452,15 +466,30 @@ function parseCliArguments(options) {
             }
         });
 
-    Object.entries(argv).forEach(async ([key, value]) => {
+    // Resolve conflicts. And only 'root conflicts'. Those that are handled
+    // transively by other options are not checked here. E.g. handling of
+    // use-esbuild in a normal JS project isn't needed since it depends on
+    // use-typescript.
+    const conflictingOptions = [['use-typescript', 'use-types']];
+
+    for (const options of conflictingOptions) {
+        if (options.some((o) => argv[o])) {
+            options
+                .filter((o) => argv[o])
+                .slice(1)
+                .forEach((o) => delete argv[o]);
+        }
+    }
+
+    argv['target-dir'] = argv['target-dir'] ?? positionals[0];
+
+    for (const [key, value] of Object.entries(argv)) {
         if (!(await isValidOption(key, value))) {
             delete argv[key];
         } else if (value === '') {
             argv[key] = getDefaultForOption(key);
         }
-    });
-
-    argv['target-dir'] = argv['target-dir'] ?? positionals[0];
+    }
 
     return argv;
 }
@@ -592,6 +621,19 @@ async function queryMissingProjectInfo() {
                 defaultValue: getDefaultForOption('use-typescript'),
             },
         );
+    }
+
+    if (
+        useOption('use-esbuild') &&
+        !(await isValidOption('use-esbuild', PROJECT_INFO['use-esbuild']))
+    ) {
+        console.log(
+            `${FAINT}esbuild allows for faster builds but doesn't check your code during the build process. So you will need to rely on your editor's type checking or use \`npm run check:types\` manually. esbuild also comes with some caveats. Visit https://esbuild.github.io/content-types/#typescript-caveats for more information.${RESET}`,
+        );
+
+        PROJECT_INFO['use-esbuild'] = await promptYesOrNo('Add esbuild?', {
+            defaultValue: getDefaultForOption('use-esbuild'),
+        });
     }
 
     if (

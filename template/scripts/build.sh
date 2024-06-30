@@ -83,7 +83,11 @@ function build_extension_package() {
 		fi
 
 		echo "Compiling TypeScript files..."
-		node ./scripts/esbuild.js
+		if find . -type f | grep -q "scripts/esbuild.js"; then
+			node ./scripts/esbuild.js
+		else
+			npx tsc
+		fi
 		echo "Done."
 
 		echo "Copying non-TypeScript src files to the dist directory..."
