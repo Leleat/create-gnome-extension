@@ -13,7 +13,7 @@ const RED = '\x1b[31m';
 const YELLOW = '\x1b[33m';
 const GREEN = '\x1b[92m';
 
-const PROJECT_INFO = await parseCliArguments({
+const OPTIONS = {
     'target-dir': {type: 'string'},
     'project-name': {type: 'string'},
     description: {type: 'string'},
@@ -21,30 +21,32 @@ const PROJECT_INFO = await parseCliArguments({
     license: {type: 'string'},
     'home-page': {type: 'string'},
     uuid: {type: 'string'},
-    'gettext-domain': {type: 'string'},
-    'settings-schema': {type: 'string'},
     'shell-version': {type: 'string'},
     'use-typescript': {type: 'boolean'},
     'no-use-typescript': {type: 'boolean'},
     'use-esbuild': {type: 'boolean'},
     'no-use-esbuild': {type: 'boolean'},
+    'use-types': {type: 'boolean'},
+    'no-use-types': {type: 'boolean'},
     'use-eslint': {type: 'boolean'},
     'no-use-eslint': {type: 'boolean'},
     'use-prettier': {type: 'boolean'},
     'no-use-prettier': {type: 'boolean'},
-    'use-types': {type: 'boolean'},
-    'no-use-types': {type: 'boolean'},
     'use-translations': {type: 'boolean'},
     'no-use-translations': {type: 'boolean'},
+    'gettext-domain': {type: 'string'},
     'use-prefs': {type: 'boolean'},
     'no-use-prefs': {type: 'boolean'},
+    'settings-schema': {type: 'string'},
     'use-prefs-window': {type: 'boolean'},
     'no-use-prefs-window': {type: 'boolean'},
     'use-stylesheet': {type: 'boolean'},
     'no-use-stylesheet': {type: 'boolean'},
     'use-resources': {type: 'boolean'},
     'no-use-resources': {type: 'boolean'},
-});
+};
+
+const PROJECT_INFO = await parseCliArguments(OPTIONS);
 
 await queryMissingProjectInfo();
 
