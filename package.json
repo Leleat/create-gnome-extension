@@ -5,7 +5,9 @@
   "bin": {
     "create-gnome-extension": "index.js"
   },
-  "scripts": {},
+  "scripts": {
+    "check": "@biomejs/biome check ./*.js"
+  },
   "files": [
     "template",
     "index.js"
@@ -28,10 +30,7 @@
   },
   "homepage": "https://github.com/leleat/create-gnome-extension",
   "devDependencies": {
-    "@eslint/js": "^9.3.0",
-    "eslint": "^9.3.0",
-    "eslint-config-prettier": "^9.1.0",
-    "globals": "^15.6.0",
-    "prettier": "^3.2.5"
+    "@biomejs/biome": "^1.8.3",
+    "globals": "^15.6.0"
   }
 }

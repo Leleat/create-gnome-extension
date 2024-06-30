@@ -4,7 +4,7 @@ import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
 import * as process from 'node:process';
 import {parseArgs} from 'node:util';
-import readline from 'readline';
+import readline from 'node:readline';
 
 const RESET = '\x1b[0m';
 const BOLD = '\x1b[1m';
@@ -106,17 +106,17 @@ if (PROJECT_INFO['use-eslint']) {
         path.join(PROJECT_INFO['target-dir'], 'eslint.config.js'),
     );
 } else {
-    delete PACKAGE_JSON.scripts['check:lint'];
-    delete PACKAGE_JSON.devDependencies['@eslint/js'];
-    delete PACKAGE_JSON.devDependencies['eslint'];
-    delete PACKAGE_JSON.devDependencies['globals'];
+    PACKAGE_JSON.scripts['check:lint'] = undefined;
+    PACKAGE_JSON.devDependencies['@eslint/js'] = undefined;
+    PACKAGE_JSON.devDependencies['eslint'] = undefined;
+    PACKAGE_JSON.devDependencies['globals'] = undefined;
 
     // JavaScript-specific
-    delete PACKAGE_JSON.devDependencies['eslint-plugin-jsdoc'];
+    PACKAGE_JSON.devDependencies['eslint-plugin-jsdoc'] = undefined;
 
     // TypeScript-specific
-    delete PACKAGE_JSON.devDependencies['typescript-eslint'];
-    delete PACKAGE_JSON.devDependencies['@types/eslint__js'];
+    PACKAGE_JSON.devDependencies['typescript-eslint'] = undefined;
+    PACKAGE_JSON.devDependencies['@types/eslint__js'] = undefined;
 }
 
 if (PROJECT_INFO['use-prettier']) {
@@ -132,12 +132,12 @@ if (PROJECT_INFO['use-prettier']) {
     ]);
 
     if (!PROJECT_INFO['use-eslint']) {
-        delete PACKAGE_JSON.devDependencies['eslint-config-prettier'];
+        PACKAGE_JSON.devDependencies['eslint-config-prettier'] = undefined;
     }
 } else {
-    delete PACKAGE_JSON.scripts['check:format'];
-    delete PACKAGE_JSON.devDependencies['prettier'];
-    delete PACKAGE_JSON.devDependencies['eslint-config-prettier'];
+    PACKAGE_JSON.scripts['check:format'] = undefined;
+    PACKAGE_JSON.devDependencies['prettier'] = undefined;
+    PACKAGE_JSON.devDependencies['eslint-config-prettier'] = undefined;
 }
 
 if (PROJECT_INFO['use-types'] || PROJECT_INFO['use-typescript']) {
@@ -148,7 +148,7 @@ if (PROJECT_INFO['use-types'] || PROJECT_INFO['use-typescript']) {
                 path.join(PROJECT_INFO['target-dir'], 'scripts', 'esbuild.js'),
             );
         } else {
-            delete TSCONFIG_JSON['compilerOptions']['isolatedModules'];
+            TSCONFIG_JSON['compilerOptions']['isolatedModules'] = undefined;
         }
 
         await fs.writeFile(
@@ -167,8 +167,8 @@ if (PROJECT_INFO['use-types'] || PROJECT_INFO['use-typescript']) {
         path.join(PROJECT_INFO['target-dir'], 'ambient.d.ts'),
     );
 } else {
-    delete PACKAGE_JSON.devDependencies['@girs/gjs'];
-    delete PACKAGE_JSON.devDependencies['@girs/gnome-shell'];
+    PACKAGE_JSON.devDependencies['@girs/gjs'] = undefined;
+    PACKAGE_JSON.devDependencies['@girs/gnome-shell'] = undefined;
 }
 
 if (PROJECT_INFO['use-translations']) {
@@ -191,7 +191,7 @@ if (PROJECT_INFO['use-translations']) {
     METADATA_JSON['gettext-domain'] =
         PROJECT_INFO['gettext-domain'] || PROJECT_INFO['uuid'];
 } else {
-    delete PACKAGE_JSON.scripts['translations:update'];
+    PACKAGE_JSON.scripts['translations:update'] = undefined;
 }
 
 if (PROJECT_INFO['use-prefs']) {
@@ -210,6 +210,7 @@ if (PROJECT_INFO['use-prefs']) {
         fs.mkdir(schemasDirPath, {recursive: true}),
         fs.writeFile(
             filePath,
+            // biome-ignore lint/style/useTemplate: to keep the indents here
             '<?xml version="1.0" encoding="UTF-8"?>\n' +
                 '<schemalist>\n' +
                 `    <schema id="org.gnome.shell.extensions.${name}" path="/org/gnome/shell/extensions/${name}/">\n` +
@@ -236,7 +237,7 @@ if (PROJECT_INFO['use-prefs']) {
                     path.join(PROJECT_INFO['target-dir'], 'src', prefsFile),
                     fileContent.replace(
                         /\$PLACEHOLDER\$/,
-                        toPascalCase(PROJECT_INFO['project-name']) + 'Prefs',
+                        `${toPascalCase(PROJECT_INFO['project-name'])}Prefs`,
                     ),
                 );
             });
@@ -416,7 +417,7 @@ async function isValidOption(option, value) {
 
                 return false;
 
-                /* eslint-disable-next-line no-unused-vars */
+                // biome-ignore lint/correctness/noUnusedVariables: test
             } catch (e) {
                 return true;
             }
@@ -461,7 +462,7 @@ async function parseCliArguments(options) {
                 const positiveName = token.name.slice(3);
                 argv[positiveName] = false;
 
-                delete argv[token.name];
+                argv[token.name] = undefined;
             } else {
                 // Resave value so last one wins if both --foo and --no-foo.
                 argv[token.name] = token.value ?? true;
@@ -479,7 +480,9 @@ async function parseCliArguments(options) {
             options
                 .filter((o) => argv[o])
                 .slice(1)
-                .forEach((o) => delete argv[o]);
+                .forEach((o) => {
+                    argv[o] = undefined;
+                });
         }
     }
 
@@ -487,7 +490,7 @@ async function parseCliArguments(options) {
 
     for (const [key, value] of Object.entries(argv)) {
         if (!(await isValidOption(key, value))) {
-            delete argv[key];
+            argv[key] = undefined;
         } else if (value === '') {
             argv[key] = getDefaultForOption(key);
         }
@@ -512,7 +515,7 @@ async function queryMissingProjectInfo(options) {
                 PROJECT_INFO[option] = await queryUserFor(option);
             }
         } else {
-            delete PROJECT_INFO[option];
+            PROJECT_INFO[option] = undefined;
         }
     }
 }
@@ -721,7 +724,9 @@ async function prompt(
         if (input === '' && defaultValue !== undefined) {
             input = defaultValue;
             break;
-        } else if (await validate(input)) {
+        }
+
+        if (await validate(input)) {
             break;
         }
 
@@ -761,10 +766,14 @@ async function promptYesOrNo(prompt, {defaultValue = false} = {}) {
         if (input === '') {
             input = defaultValue;
             break;
-        } else if (input === 'yes' || input === 'y') {
+        }
+
+        if (input === 'yes' || input === 'y') {
             input = true;
             break;
-        } else if (input === 'no' || input === 'n') {
+        }
+
+        if (input === 'no' || input === 'n') {
             input = false;
             break;
         }
