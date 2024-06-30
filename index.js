@@ -13,7 +13,34 @@ const RED = '\x1b[31m';
 const YELLOW = '\x1b[33m';
 const GREEN = '\x1b[92m';
 
-const PROJECT_INFO = parseCliArguments();
+const PROJECT_INFO = parseCliArguments({
+    'target-dir': {type: 'string'},
+    'project-name': {type: 'string'},
+    description: {type: 'string'},
+    'version-name': {type: 'string'},
+    license: {type: 'string'},
+    'home-page': {type: 'string'},
+    uuid: {type: 'string'},
+    'gettext-domain': {type: 'string'},
+    'settings-schema': {type: 'string'},
+    'shell-version': {type: 'string'},
+    'use-eslint': {type: 'boolean'},
+    'no-use-eslint': {type: 'boolean'},
+    'use-prettier': {type: 'boolean'},
+    'no-use-prettier': {type: 'boolean'},
+    'use-types': {type: 'boolean'},
+    'no-use-types': {type: 'boolean'},
+    'use-translations': {type: 'boolean'},
+    'no-use-translations': {type: 'boolean'},
+    'use-prefs': {type: 'boolean'},
+    'no-use-prefs': {type: 'boolean'},
+    'use-prefs-window': {type: 'boolean'},
+    'no-use-prefs-window': {type: 'boolean'},
+    'use-stylesheet': {type: 'boolean'},
+    'no-use-stylesheet': {type: 'boolean'},
+    'use-resources': {type: 'boolean'},
+    'no-use-resources': {type: 'boolean'},
+});
 
 await queryMissingProjectInfo();
 
@@ -355,43 +382,18 @@ async function isValidOption(option, value) {
 /**
  * Parses the CLI arguments into an object with information about the project.
  *
+ * @param {object} options - the options object to pass to `parseArgs`
+ *
  * @returns {object} - the parsed CLI arguments
  */
-function parseCliArguments() {
+function parseCliArguments(options) {
     const {
         values: argv,
         positionals,
         tokens,
     } = parseArgs({
         args: process.argv.slice(2),
-        options: {
-            'target-dir': {type: 'string'},
-            'project-name': {type: 'string'},
-            description: {type: 'string'},
-            'version-name': {type: 'string'},
-            license: {type: 'string'},
-            'home-page': {type: 'string'},
-            uuid: {type: 'string'},
-            'gettext-domain': {type: 'string'},
-            'settings-schema': {type: 'string'},
-            'shell-version': {type: 'string'},
-            'use-eslint': {type: 'boolean'},
-            'no-use-eslint': {type: 'boolean'},
-            'use-prettier': {type: 'boolean'},
-            'no-use-prettier': {type: 'boolean'},
-            'use-types': {type: 'boolean'},
-            'no-use-types': {type: 'boolean'},
-            'use-translations': {type: 'boolean'},
-            'no-use-translations': {type: 'boolean'},
-            'use-prefs': {type: 'boolean'},
-            'no-use-prefs': {type: 'boolean'},
-            'use-prefs-window': {type: 'boolean'},
-            'no-use-prefs-window': {type: 'boolean'},
-            'use-stylesheet': {type: 'boolean'},
-            'no-use-stylesheet': {type: 'boolean'},
-            'use-resources': {type: 'boolean'},
-            'no-use-resources': {type: 'boolean'},
-        },
+        options,
         strict: false,
         tokens: true,
     });
