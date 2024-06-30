@@ -13,17 +13,60 @@ const RED = '\x1b[31m';
 const YELLOW = '\x1b[33m';
 const GREEN = '\x1b[92m';
 
-const PROJECT_INFO = parseCliArguments();
+const PROJECT_INFO = await parseCliArguments({
+    'target-dir': {type: 'string'},
+    'project-name': {type: 'string'},
+    description: {type: 'string'},
+    'version-name': {type: 'string'},
+    license: {type: 'string'},
+    'home-page': {type: 'string'},
+    uuid: {type: 'string'},
+    'gettext-domain': {type: 'string'},
+    'settings-schema': {type: 'string'},
+    'shell-version': {type: 'string'},
+    'use-typescript': {type: 'boolean'},
+    'no-use-typescript': {type: 'boolean'},
+    'use-esbuild': {type: 'boolean'},
+    'no-use-esbuild': {type: 'boolean'},
+    'use-eslint': {type: 'boolean'},
+    'no-use-eslint': {type: 'boolean'},
+    'use-prettier': {type: 'boolean'},
+    'no-use-prettier': {type: 'boolean'},
+    'use-types': {type: 'boolean'},
+    'no-use-types': {type: 'boolean'},
+    'use-translations': {type: 'boolean'},
+    'no-use-translations': {type: 'boolean'},
+    'use-prefs': {type: 'boolean'},
+    'no-use-prefs': {type: 'boolean'},
+    'use-prefs-window': {type: 'boolean'},
+    'no-use-prefs-window': {type: 'boolean'},
+    'use-stylesheet': {type: 'boolean'},
+    'no-use-stylesheet': {type: 'boolean'},
+    'use-resources': {type: 'boolean'},
+    'no-use-resources': {type: 'boolean'},
+});
 
 await queryMissingProjectInfo();
 
 const TEMPLATE_PATH = path.resolve(import.meta.dirname, 'template');
-const [METADATA_JSON, PACKAGE_JSON] = await Promise.all([
+const TEMPLATE_LANG_DIR = PROJECT_INFO['use-typescript']
+    ? 'template.ts'
+    : 'template.js';
+const [METADATA_JSON, PACKAGE_JSON, TSCONFIG_JSON] = await Promise.all([
     fs
         .readFile(path.join(TEMPLATE_PATH, 'metadata.json'), 'utf-8')
         .then(JSON.parse),
     fs
-        .readFile(path.join(TEMPLATE_PATH, 'js', 'package.json'), 'utf-8')
+        .readFile(
+            path.join(TEMPLATE_PATH, TEMPLATE_LANG_DIR, 'package.json'),
+            'utf-8',
+        )
+        .then(JSON.parse),
+    fs
+        .readFile(
+            path.join(TEMPLATE_PATH, 'template.ts', 'tsconfig.json'),
+            'utf-8',
+        )
         .then(JSON.parse),
 ]);
 
@@ -48,32 +91,40 @@ await Promise.all([
 ]);
 
 if (PROJECT_INFO['use-eslint']) {
-    await Promise.all([
-        fs.cp(
-            path.join(TEMPLATE_PATH, 'js', 'lint'),
+    if (!PROJECT_INFO['use-typescript']) {
+        await fs.cp(
+            path.join(TEMPLATE_PATH, 'template.js', 'lint'),
             path.join(PROJECT_INFO['target-dir'], 'lint'),
             {recursive: true},
-        ),
-        fs.copyFile(
-            path.join(TEMPLATE_PATH, 'js', 'eslint.config.js'),
-            path.join(PROJECT_INFO['target-dir'], 'eslint.config.js'),
-        ),
-    ]);
+        );
+    }
+
+    await fs.copyFile(
+        path.join(TEMPLATE_PATH, TEMPLATE_LANG_DIR, 'eslint.config.js'),
+        path.join(PROJECT_INFO['target-dir'], 'eslint.config.js'),
+    );
 } else {
     delete PACKAGE_JSON.scripts['check:lint'];
     delete PACKAGE_JSON.devDependencies['@eslint/js'];
     delete PACKAGE_JSON.devDependencies['eslint'];
+    delete PACKAGE_JSON.devDependencies['globals'];
+
+    // JavaScript-specific
     delete PACKAGE_JSON.devDependencies['eslint-plugin-jsdoc'];
+
+    // TypeScript-specific
+    delete PACKAGE_JSON.devDependencies['typescript-eslint'];
+    delete PACKAGE_JSON.devDependencies['@types/eslint__js'];
 }
 
 if (PROJECT_INFO['use-prettier']) {
     await Promise.all([
         fs.copyFile(
-            path.join(TEMPLATE_PATH, 'js', 'prettier.config.js'),
+            path.join(TEMPLATE_PATH, 'prettier.config.js'),
             path.join(PROJECT_INFO['target-dir'], 'prettier.config.js'),
         ),
         fs.copyFile(
-            path.join(TEMPLATE_PATH, 'js', '.prettierignore'),
+            path.join(TEMPLATE_PATH, '.prettierignore'),
             path.join(PROJECT_INFO['target-dir'], '.prettierignore'),
         ),
     ]);
@@ -87,17 +138,32 @@ if (PROJECT_INFO['use-prettier']) {
     delete PACKAGE_JSON.devDependencies['eslint-config-prettier'];
 }
 
-if (PROJECT_INFO['use-types']) {
-    await Promise.all([
-        fs.copyFile(
-            path.join(TEMPLATE_PATH, 'js', 'jsconfig.json'),
+if (PROJECT_INFO['use-types'] || PROJECT_INFO['use-typescript']) {
+    if (PROJECT_INFO['use-typescript']) {
+        if (PROJECT_INFO['use-esbuild']) {
+            await fs.copyFile(
+                path.join(TEMPLATE_PATH, 'scripts', 'esbuild.js'),
+                path.join(PROJECT_INFO['target-dir'], 'scripts', 'esbuild.js'),
+            );
+        } else {
+            delete TSCONFIG_JSON['compilerOptions']['isolatedModules'];
+        }
+
+        await fs.writeFile(
+            path.join(PROJECT_INFO['target-dir'], 'tsconfig.json'),
+            JSON.stringify(TSCONFIG_JSON, null, 2),
+        );
+    } else {
+        await fs.copyFile(
+            path.join(TEMPLATE_PATH, 'template.js', 'jsconfig.json'),
             path.join(PROJECT_INFO['target-dir'], 'jsconfig.json'),
-        ),
-        fs.copyFile(
-            path.join(TEMPLATE_PATH, 'js', 'ambient.d.ts'),
-            path.join(PROJECT_INFO['target-dir'], 'ambient.d.ts'),
-        ),
-    ]);
+        );
+    }
+
+    await fs.copyFile(
+        path.join(TEMPLATE_PATH, 'ambient.d.ts'),
+        path.join(PROJECT_INFO['target-dir'], 'ambient.d.ts'),
+    );
 } else {
     delete PACKAGE_JSON.devDependencies['@girs/gjs'];
     delete PACKAGE_JSON.devDependencies['@girs/gnome-shell'];
@@ -106,12 +172,12 @@ if (PROJECT_INFO['use-types']) {
 if (PROJECT_INFO['use-translations']) {
     await Promise.all([
         fs.cp(
-            path.join(TEMPLATE_PATH, 'js', 'po'),
+            path.join(TEMPLATE_PATH, 'po'),
             path.join(PROJECT_INFO['target-dir'], 'po'),
             {recursive: true},
         ),
         fs.copyFile(
-            path.join(TEMPLATE_PATH, 'js', 'scripts', 'update-translations.sh'),
+            path.join(TEMPLATE_PATH, 'scripts', 'update-translations.sh'),
             path.join(
                 PROJECT_INFO['target-dir'],
                 'scripts',
@@ -154,15 +220,19 @@ if (PROJECT_INFO['use-prefs']) {
         PROJECT_INFO['settings-schema'] || PROJECT_INFO['uuid'];
 
     if (PROJECT_INFO['use-prefs-window']) {
+        const prefsFile = PROJECT_INFO['use-typescript']
+            ? 'prefs.ts'
+            : 'prefs.js';
+
         await fs
             .readFile(
-                path.join(TEMPLATE_PATH, 'js', 'src', 'prefs.js'),
+                path.join(TEMPLATE_PATH, TEMPLATE_LANG_DIR, 'src', prefsFile),
                 'utf-8',
             )
-            .then(async (prefsJsFile) => {
+            .then(async (fileContent) => {
                 await fs.writeFile(
-                    path.join(PROJECT_INFO['target-dir'], 'src', 'prefs.js'),
-                    prefsJsFile.replace(
+                    path.join(PROJECT_INFO['target-dir'], 'src', prefsFile),
+                    fileContent.replace(
                         /\$PLACEHOLDER\$/,
                         toPascalCase(PROJECT_INFO['project-name']) + 'Prefs',
                     ),
@@ -180,37 +250,41 @@ if (PROJECT_INFO['use-stylesheet']) {
 
 if (PROJECT_INFO['use-resources']) {
     await fs.cp(
-        path.join(TEMPLATE_PATH, 'js', 'data'),
+        path.join(TEMPLATE_PATH, 'data'),
         path.join(PROJECT_INFO['target-dir'], 'data'),
         {recursive: true},
     );
 }
 
+const extFile = PROJECT_INFO['use-typescript']
+    ? 'extension.ts'
+    : 'extension.js';
+
 await Promise.all([
     fs
         .readFile(
-            path.join(TEMPLATE_PATH, 'js', 'src', 'extension.js'),
+            path.join(TEMPLATE_PATH, TEMPLATE_LANG_DIR, 'src', extFile),
             'utf-8',
         )
-        .then(async (extensionJsFile) => {
+        .then(async (fileContent) => {
             await fs.writeFile(
-                path.join(PROJECT_INFO['target-dir'], 'src', 'extension.js'),
-                extensionJsFile.replace(
+                path.join(PROJECT_INFO['target-dir'], 'src', extFile),
+                fileContent.replace(
                     /\$PLACEHOLDER\$/,
                     toPascalCase(PROJECT_INFO['project-name']),
                 ),
             );
         }),
     fs.copyFile(
-        path.join(TEMPLATE_PATH, 'js', '_gitignore'),
+        path.join(TEMPLATE_PATH, '_gitignore'),
         path.join(PROJECT_INFO['target-dir'], '.gitignore'),
     ),
     fs.copyFile(
-        path.join(TEMPLATE_PATH, 'js', '.editorconfig'),
+        path.join(TEMPLATE_PATH, '.editorconfig'),
         path.join(PROJECT_INFO['target-dir'], '.editorconfig'),
     ),
     fs.copyFile(
-        path.join(TEMPLATE_PATH, 'js', 'scripts', 'build.sh'),
+        path.join(TEMPLATE_PATH, 'scripts', 'build.sh'),
         path.join(PROJECT_INFO['target-dir'], 'scripts', 'build.sh'),
     ),
     fs.writeFile(
@@ -230,6 +304,7 @@ await Promise.all([
 console.log(`${GREEN}Project created at ${PROJECT_INFO['target-dir']}${RESET}`);
 
 if (
+    PROJECT_INFO['use-typescript'] ||
     PROJECT_INFO['use-eslint'] ||
     PROJECT_INFO['use-prettier'] ||
     PROJECT_INFO['use-types']
@@ -272,9 +347,13 @@ function getDefaultForOption(option) {
         case 'settings-schema':
             return PROJECT_INFO['uuid'];
 
+        case 'use-esbuild':
         case 'use-eslint':
         case 'use-prettier':
+            return true;
+
         case 'use-types':
+        case 'use-typescript':
         case 'use-translations':
         case 'use-prefs':
         case 'use-prefs-window':
@@ -308,15 +387,17 @@ async function isValidOption(option, value) {
         case 'settings-schema':
             return typeof value === 'string';
 
+        case 'use-esbuild':
         case 'use-eslint':
         case 'use-prettier':
         case 'use-types':
+        case 'use-typescript':
         case 'use-translations':
         case 'use-prefs':
         case 'use-prefs-window':
         case 'use-stylesheet':
         case 'use-resources':
-            return true;
+            return typeof value === 'boolean';
 
         case 'project-name':
         case 'description':
@@ -355,43 +436,18 @@ async function isValidOption(option, value) {
 /**
  * Parses the CLI arguments into an object with information about the project.
  *
- * @returns {object} - the parsed CLI arguments
+ * @param {object} options - the options object to pass to `parseArgs`
+ *
+ * @returns {Promise<object>} - the parsed CLI arguments
  */
-function parseCliArguments() {
+async function parseCliArguments(options) {
     const {
         values: argv,
         positionals,
         tokens,
     } = parseArgs({
         args: process.argv.slice(2),
-        options: {
-            'target-dir': {type: 'string'},
-            'project-name': {type: 'string'},
-            description: {type: 'string'},
-            'version-name': {type: 'string'},
-            license: {type: 'string'},
-            'home-page': {type: 'string'},
-            uuid: {type: 'string'},
-            'gettext-domain': {type: 'string'},
-            'settings-schema': {type: 'string'},
-            'shell-version': {type: 'string'},
-            'use-eslint': {type: 'boolean'},
-            'no-use-eslint': {type: 'boolean'},
-            'use-prettier': {type: 'boolean'},
-            'no-use-prettier': {type: 'boolean'},
-            'use-types': {type: 'boolean'},
-            'no-use-types': {type: 'boolean'},
-            'use-translations': {type: 'boolean'},
-            'no-use-translations': {type: 'boolean'},
-            'use-prefs': {type: 'boolean'},
-            'no-use-prefs': {type: 'boolean'},
-            'use-prefs-window': {type: 'boolean'},
-            'no-use-prefs-window': {type: 'boolean'},
-            'use-stylesheet': {type: 'boolean'},
-            'no-use-stylesheet': {type: 'boolean'},
-            'use-resources': {type: 'boolean'},
-            'no-use-resources': {type: 'boolean'},
-        },
+        options,
         strict: false,
         tokens: true,
     });
@@ -410,15 +466,30 @@ function parseCliArguments() {
             }
         });
 
-    Object.entries(argv).forEach(async ([key, value]) => {
+    // Resolve conflicts. And only 'root conflicts'. Those that are handled
+    // transively by other options are not checked here. E.g. handling of
+    // use-esbuild in a normal JS project isn't needed since it depends on
+    // use-typescript.
+    const conflictingOptions = [['use-typescript', 'use-types']];
+
+    for (const options of conflictingOptions) {
+        if (options.some((o) => argv[o])) {
+            options
+                .filter((o) => argv[o])
+                .slice(1)
+                .forEach((o) => delete argv[o]);
+        }
+    }
+
+    argv['target-dir'] = argv['target-dir'] ?? positionals[0];
+
+    for (const [key, value] of Object.entries(argv)) {
         if (!(await isValidOption(key, value))) {
             delete argv[key];
         } else if (value === '') {
             argv[key] = getDefaultForOption(key);
         }
-    });
-
-    argv['target-dir'] = argv['target-dir'] ?? positionals[0];
+    }
 
     return argv;
 }
@@ -427,70 +498,98 @@ function parseCliArguments() {
  * Queries the user for information about the project.
  */
 async function queryMissingProjectInfo() {
-    if (!(await isValidOption('target-dir', PROJECT_INFO['target-dir']))) {
+    if (
+        useOption('target-dir') &&
+        !(await isValidOption('target-dir', PROJECT_INFO['target-dir']))
+    ) {
         console.log(`${FAINT}Enter the path for your project${RESET}`);
         PROJECT_INFO['target-dir'] = path.resolve(
             await prompt('Target directory:', {
                 validate: async (input) =>
                     await isValidOption('target-dir', input),
+                defaultValue: getDefaultForOption('target-dir'),
                 onError: 'Enter a path to a directory that does not exist.',
             }),
         );
     }
 
-    if (!(await isValidOption('project-name', PROJECT_INFO['project-name']))) {
+    if (
+        useOption('project-name') &&
+        !(await isValidOption('project-name', PROJECT_INFO['project-name']))
+    ) {
         console.log(
             `${FAINT}Enter a project name. A name should be a short and descriptive string${RESET}`,
         );
         PROJECT_INFO['project-name'] = await prompt('Project name:', {
             validate: async (input) =>
                 await isValidOption('project-name', input),
+            defaultValue: getDefaultForOption('project-name'),
             onError: 'Project name cannot be empty.',
         });
     }
 
-    if (!(await isValidOption('description', PROJECT_INFO['description']))) {
+    if (
+        useOption('description') &&
+        !(await isValidOption('description', PROJECT_INFO['description']))
+    ) {
         console.log(
             `${FAINT}Enter a description, a single-sentence explanation of what your extension does${RESET}`,
         );
         PROJECT_INFO['description'] = await prompt('Description:', {
             validate: async (input) =>
                 await isValidOption('description', input),
+            defaultValue: getDefaultForOption('description'),
             onError: 'Description cannot be empty.',
         });
     }
 
-    if (!(await isValidOption('version-name', PROJECT_INFO['version-name']))) {
+    if (
+        useOption('version-name') &&
+        !(await isValidOption('version-name', PROJECT_INFO['version-name']))
+    ) {
         PROJECT_INFO['version-name'] = await prompt('Version:', {
             defaultValue: getDefaultForOption('version-name'),
         });
     }
 
-    if (!(await isValidOption('license', PROJECT_INFO['license']))) {
+    if (
+        useOption('license') &&
+        !(await isValidOption('license', PROJECT_INFO['license']))
+    ) {
         console.log(`${FAINT}Enter a SPDX License Identifier${RESET}`);
         PROJECT_INFO['license'] = await prompt('License:', {
             defaultValue: getDefaultForOption('license'),
         });
     }
 
-    if (!(await isValidOption('home-page', PROJECT_INFO['home-page']))) {
+    if (
+        useOption('home-page') &&
+        !(await isValidOption('home-page', PROJECT_INFO['home-page']))
+    ) {
         console.log(
             `${FAINT}Optionally, enter a homepage, for example, a Git repository${RESET}`,
         );
-        PROJECT_INFO['home-page'] = await prompt('Homepage:');
+        PROJECT_INFO['home-page'] = await prompt('Homepage:', {
+            defaultValue: getDefaultForOption('home-page'),
+        });
     }
 
-    if (!(await isValidOption('uuid', PROJECT_INFO['uuid']))) {
+    if (
+        useOption('uuid') &&
+        !(await isValidOption('uuid', PROJECT_INFO['uuid']))
+    ) {
         console.log(
             `${FAINT}Enter a UUID. The UUID is a globally-unique identifier for your extension. This should be in the format of an email address (clicktofocus@janedoe.example.com)${RESET}`,
         );
         PROJECT_INFO['uuid'] = await prompt('UUID:', {
             validate: async (input) => await isValidOption('uuid', input),
+            defaultValue: getDefaultForOption('uuid'),
             onError: 'UUID cannot be empty.',
         });
     }
 
     if (
+        useOption('shell-version') &&
         !(await isValidOption('shell-version', PROJECT_INFO['shell-version']))
     ) {
         console.log(
@@ -500,6 +599,7 @@ async function queryMissingProjectInfo() {
             'Supported GNOME Shell versions:',
             {
                 validate: (input) => isValidOption('shell-version', input),
+                defaultValue: getDefaultForOption('shell-version'),
                 onError:
                     'The supported GNOME Shell versions should be a comma-separated list of numbers >= 45.',
             },
@@ -511,49 +611,87 @@ async function queryMissingProjectInfo() {
         .map((v) => v.trim())
         .filter((v) => v);
 
-    if (!(await isValidOption('use-prefs', PROJECT_INFO['use-prefs']))) {
-        PROJECT_INFO['use-prefs'] = await promptYesOrNo('Add preferences?');
-    }
-
-    if (PROJECT_INFO['use-prefs']) {
-        if (
-            !(await isValidOption(
-                'settings-schema',
-                PROJECT_INFO['settings-schema'],
-            ))
-        ) {
-            PROJECT_INFO['settings-schema'] = await prompt(
-                'Enter settings schema:',
-                {
-                    defaultValue: PROJECT_INFO['uuid'],
-                },
-            );
-        }
-
-        if (
-            !(await isValidOption(
-                'use-prefs-window',
-                PROJECT_INFO['use-prefs-window'],
-            ))
-        ) {
-            PROJECT_INFO['use-prefs-window'] = await promptYesOrNo(
-                'Add preference window?',
-            );
-        }
+    if (
+        useOption('use-typescript') &&
+        !(await isValidOption('use-typescript', PROJECT_INFO['use-typescript']))
+    ) {
+        PROJECT_INFO['use-typescript'] = await promptYesOrNo(
+            'Add TypeScript?',
+            {
+                defaultValue: getDefaultForOption('use-typescript'),
+            },
+        );
     }
 
     if (
+        useOption('use-esbuild') &&
+        !(await isValidOption('use-esbuild', PROJECT_INFO['use-esbuild']))
+    ) {
+        console.log(
+            `${FAINT}esbuild allows for faster builds but doesn't check your code during the build process. So you will need to rely on your editor's type checking or use \`npm run check:types\` manually. esbuild also comes with some caveats. Visit https://esbuild.github.io/content-types/#typescript-caveats for more information.${RESET}`,
+        );
+
+        PROJECT_INFO['use-esbuild'] = await promptYesOrNo('Add esbuild?', {
+            defaultValue: getDefaultForOption('use-esbuild'),
+        });
+    }
+
+    if (
+        useOption('use-prefs') &&
+        !(await isValidOption('use-prefs', PROJECT_INFO['use-prefs']))
+    ) {
+        PROJECT_INFO['use-prefs'] = await promptYesOrNo('Add preferences?', {
+            defaultValue: getDefaultForOption('use-prefs'),
+        });
+    }
+
+    if (
+        useOption('settings-schema') &&
+        !(await isValidOption(
+            'settings-schema',
+            PROJECT_INFO['settings-schema'],
+        ))
+    ) {
+        PROJECT_INFO['settings-schema'] = await prompt(
+            'Enter settings schema:',
+            {
+                defaultValue: PROJECT_INFO['uuid'],
+            },
+        );
+    }
+
+    if (
+        useOption('use-prefs-window') &&
+        !(await isValidOption(
+            'use-prefs-window',
+            PROJECT_INFO['use-prefs-window'],
+        ))
+    ) {
+        PROJECT_INFO['use-prefs-window'] = await promptYesOrNo(
+            'Add preference window?',
+            {
+                defaultValue: getDefaultForOption('use-prefs-window'),
+            },
+        );
+    }
+
+    if (
+        useOption('use-translations') &&
         !(await isValidOption(
             'use-translations',
             PROJECT_INFO['use-translations'],
         ))
     ) {
-        PROJECT_INFO['use-translations'] =
-            await promptYesOrNo('Add translations?');
+        PROJECT_INFO['use-translations'] = await promptYesOrNo(
+            'Add translations?',
+            {
+                defaultValue: getDefaultForOption('use-translations'),
+            },
+        );
     }
 
     if (
-        PROJECT_INFO['use-translations'] &&
+        useOption('gettext-domain') &&
         !(await isValidOption('gettext-domain', PROJECT_INFO['gettext-domain']))
     ) {
         PROJECT_INFO['gettext-domain'] = await prompt('Enter gettext domain:', {
@@ -562,30 +700,54 @@ async function queryMissingProjectInfo() {
     }
 
     if (
+        useOption('use-stylesheet') &&
         !(await isValidOption('use-stylesheet', PROJECT_INFO['use-stylesheet']))
     ) {
-        PROJECT_INFO['use-stylesheet'] =
-            await promptYesOrNo('Add a stylesheet?');
-    }
-
-    if (
-        !(await isValidOption('use-resources', PROJECT_INFO['use-resources']))
-    ) {
-        PROJECT_INFO['use-resources'] = await promptYesOrNo('Use GResources?');
-    }
-
-    if (!(await isValidOption('use-types', PROJECT_INFO['use-types']))) {
-        PROJECT_INFO['use-types'] = await promptYesOrNo(
-            'Add types with gjsify/ts-for-gir?',
+        PROJECT_INFO['use-stylesheet'] = await promptYesOrNo(
+            'Add a stylesheet?',
+            {
+                defaultValue: getDefaultForOption('use-stylesheet'),
+            },
         );
     }
 
-    if (!(await isValidOption('use-eslint', PROJECT_INFO['use-eslint']))) {
-        PROJECT_INFO['use-eslint'] = await promptYesOrNo('Add ESlint?');
+    if (
+        useOption('use-resources') &&
+        !(await isValidOption('use-resources', PROJECT_INFO['use-resources']))
+    ) {
+        PROJECT_INFO['use-resources'] = await promptYesOrNo('Use GResources?', {
+            defaultValue: getDefaultForOption('use-resources'),
+        });
     }
 
-    if (!(await isValidOption('use-prettier', PROJECT_INFO['use-prettier']))) {
-        PROJECT_INFO['use-prettier'] = await promptYesOrNo('Add Prettier?');
+    if (
+        useOption('use-types') &&
+        !(await isValidOption('use-types', PROJECT_INFO['use-types']))
+    ) {
+        PROJECT_INFO['use-types'] = await promptYesOrNo(
+            'Add types to JavaScript with gjsify/ts-for-gir?',
+            {
+                defaultValue: getDefaultForOption('use-types'),
+            },
+        );
+    }
+
+    if (
+        useOption('use-eslint') &&
+        !(await isValidOption('use-eslint', PROJECT_INFO['use-eslint']))
+    ) {
+        PROJECT_INFO['use-eslint'] = await promptYesOrNo('Add ESlint?', {
+            defaultValue: getDefaultForOption('use-eslint'),
+        });
+    }
+
+    if (
+        useOption('use-prettier') &&
+        !(await isValidOption('use-prettier', PROJECT_INFO['use-prettier']))
+    ) {
+        PROJECT_INFO['use-prettier'] = await promptYesOrNo('Add Prettier?', {
+            defaultValue: getDefaultForOption('use-prettier'),
+        });
     }
 }
 
@@ -611,7 +773,8 @@ async function prompt(
         onError = 'Invalid input.',
     } = {},
 ) {
-    const defaultString = defaultValue ? ` (${defaultValue})` : '';
+    const defaultString =
+        defaultValue === undefined ? '' : ` (${defaultValue})`;
     const lineReader = readline.createInterface({
         input: process.stdin,
         output: process.stdout,
@@ -713,4 +876,46 @@ function toPascalCase(string) {
         .filter((v) => v)
         .map((word) => word[0].toUpperCase() + word.slice(1).toLowerCase())
         .join('');
+}
+
+/**
+ * Determines whether to use an option based on its relation to other options.
+ *
+ * @param {string} option
+ *
+ * @returns {boolean}
+ */
+function useOption(option) {
+    return {
+        'target-dir': true,
+        'project-name': true,
+        description: true,
+        'version-name': true,
+        license: true,
+        'home-page': true,
+        uuid: true,
+        'gettext-domain': PROJECT_INFO['use-translations'],
+        'settings-schema': PROJECT_INFO['use-prefs'],
+        'shell-version': true,
+        'use-typescript': !PROJECT_INFO['use-types'],
+        'no-use-typescript': !PROJECT_INFO['use-types'],
+        'use-esbuild': PROJECT_INFO['use-typescript'],
+        'no-use-esbuild': PROJECT_INFO['use-typescript'],
+        'use-eslint': true,
+        'no-use-eslint': true,
+        'use-prettier': true,
+        'no-use-prettier': true,
+        'use-types': !PROJECT_INFO['use-typescript'],
+        'no-use-types': !PROJECT_INFO['use-typescript'],
+        'use-translations': true,
+        'no-use-translations': true,
+        'use-prefs': true,
+        'no-use-prefs': true,
+        'use-prefs-window': PROJECT_INFO['use-prefs'],
+        'no-use-prefs-window': PROJECT_INFO['use-prefs'],
+        'use-stylesheet': true,
+        'no-use-stylesheet': true,
+        'use-resources': true,
+        'no-use-resources': true,
+    }[option];
 }

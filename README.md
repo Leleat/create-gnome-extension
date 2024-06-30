@@ -33,6 +33,7 @@ You will be asked some questions to determine which files to include in your pro
 --gettext-domain=<string> # Defaults to <uuid> on empty string
 --settings-schema=<string> # Defaults to <uuid> on empty string
 --shell-version=<string> # comma-separated list of numbers >= 45
+--[no-]use-typescript
 --[no-]use-eslint
 --[no-]use-prettier
 --[no-]use-types
@@ -55,8 +56,8 @@ project-directory/
 ├── src/
 │   ├── schemas/
 │   │   └── org.gnome.shell.extensions.project-name.gschema.xml
-│   ├── extension.json
-│   ├── prefs.json
+│   ├── extension.[js|ts]
+│   ├── prefs.[js|ts]
 │   └── stylesheet.css
 ├── metadata.json
 └── ...
