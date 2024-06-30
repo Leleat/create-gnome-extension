@@ -731,7 +731,8 @@ async function prompt(
         onError = 'Invalid input.',
     } = {},
 ) {
-    const defaultString = defaultValue ? ` (${defaultValue})` : '';
+    const defaultString =
+        defaultValue === undefined ? '' : ` (${defaultValue})`;
     const lineReader = readline.createInterface({
         input: process.stdin,
         output: process.stdout,
