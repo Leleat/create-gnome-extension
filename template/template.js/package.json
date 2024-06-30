@@ -4,7 +4,7 @@
     "build": "./scripts/build.sh",
     "build:dev": "./scripts/build.sh --unsafe-reload",
     "build:install": "./scripts/build.sh --install",
-    "check:lint": "eslint src",
+    "check:lint": "eslint src/**/*.js",
     "check:format": "prettier --check src/**/*.js",
     "translations:update": "./scripts/update-translations.sh"
   },
