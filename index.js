@@ -329,11 +329,11 @@ if (
  */
 function getDefaultForOption(option) {
     switch (option) {
-        case 'target-dir':
-        case 'project-name':
         case 'description':
-        case 'uuid':
+        case 'project-name':
         case 'shell-version':
+        case 'target-dir':
+        case 'uuid':
             return undefined;
 
         case 'home-page':
@@ -354,13 +354,13 @@ function getDefaultForOption(option) {
         case 'use-prettier':
             return true;
 
+        case 'use-prefs-window':
+        case 'use-prefs':
+        case 'use-resources':
+        case 'use-stylesheet':
+        case 'use-translations':
         case 'use-types':
         case 'use-typescript':
-        case 'use-translations':
-        case 'use-prefs':
-        case 'use-prefs-window':
-        case 'use-stylesheet':
-        case 'use-resources':
             return false;
 
         default:
@@ -382,27 +382,27 @@ async function isValidOption(option, value) {
     }
 
     switch (option) {
-        case 'version-name':
-        case 'license':
-        case 'home-page':
         case 'gettext-domain':
+        case 'home-page':
+        case 'license':
         case 'settings-schema':
+        case 'version-name':
             return typeof value === 'string';
 
         case 'use-esbuild':
         case 'use-eslint':
+        case 'use-prefs-window':
+        case 'use-prefs':
         case 'use-prettier':
+        case 'use-resources':
+        case 'use-stylesheet':
+        case 'use-translations':
         case 'use-types':
         case 'use-typescript':
-        case 'use-translations':
-        case 'use-prefs':
-        case 'use-prefs-window':
-        case 'use-stylesheet':
-        case 'use-resources':
             return typeof value === 'boolean';
 
-        case 'project-name':
         case 'description':
+        case 'project-name':
         case 'uuid':
             return typeof value === 'string' && /\w+/.test(value);
 
@@ -889,35 +889,35 @@ function toPascalCase(string) {
  */
 function useOption(option) {
     return {
-        'target-dir': true,
-        'project-name': true,
         description: true,
-        'version-name': true,
-        license: true,
-        'home-page': true,
-        uuid: true,
         'gettext-domain': PROJECT_INFO['use-translations'],
+        'home-page': true,
+        license: true,
+        'no-use-esbuild': PROJECT_INFO['use-typescript'],
+        'no-use-eslint': true,
+        'no-use-prefs-window': PROJECT_INFO['use-prefs'],
+        'no-use-prefs': true,
+        'no-use-prettier': true,
+        'no-use-resources': true,
+        'no-use-stylesheet': true,
+        'no-use-translations': true,
+        'no-use-types': !PROJECT_INFO['use-typescript'],
+        'no-use-typescript': !PROJECT_INFO['use-types'],
+        'project-name': true,
         'settings-schema': PROJECT_INFO['use-prefs'],
         'shell-version': true,
-        'use-typescript': !PROJECT_INFO['use-types'],
-        'no-use-typescript': !PROJECT_INFO['use-types'],
+        'target-dir': true,
         'use-esbuild': PROJECT_INFO['use-typescript'],
-        'no-use-esbuild': PROJECT_INFO['use-typescript'],
         'use-eslint': true,
-        'no-use-eslint': true,
-        'use-prettier': true,
-        'no-use-prettier': true,
-        'use-types': !PROJECT_INFO['use-typescript'],
-        'no-use-types': !PROJECT_INFO['use-typescript'],
-        'use-translations': true,
-        'no-use-translations': true,
-        'use-prefs': true,
-        'no-use-prefs': true,
         'use-prefs-window': PROJECT_INFO['use-prefs'],
-        'no-use-prefs-window': PROJECT_INFO['use-prefs'],
-        'use-stylesheet': true,
-        'no-use-stylesheet': true,
+        'use-prefs': true,
+        'use-prettier': true,
         'use-resources': true,
-        'no-use-resources': true,
+        'use-stylesheet': true,
+        'use-translations': true,
+        'use-types': !PROJECT_INFO['use-typescript'],
+        'use-typescript': !PROJECT_INFO['use-types'],
+        uuid: true,
+        'version-name': true,
     }[option];
 }
