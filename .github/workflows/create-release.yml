@@ -25,6 +25,7 @@ jobs:
           body: "Check out the [CHANGELOG](https://github.com/Leleat/create-gnome-extension/blob/main/CHANGELOG.md) for all the details."
   publish-npm:
     permissions:
+      contents: read
       id-token: write
     name: Publish to npm
     runs-on: ubuntu-latest
