@@ -1,0 +1,31 @@
+name: Release
+run-name: Create Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  release:
+    name: Create release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "lts"
+      - name: Create tarball
+        run: npm pack
+      - name: Extract version number
+        id: extract_version
+        run: echo "RELEASE_VERSION=${${{ github.ref_name }}#v}" >> $GITHUB_ENV
+      - name: Upload to Release
+        uses: Shopify/upload-to-release@v2.0.0
+        with:
+          name: create-gnome-extension
+          path: create-gnome-extension-$RELEASE_VERSION.tgz
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          content-type: application/gzip
