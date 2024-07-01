@@ -23,12 +23,12 @@
   "license": "GPL-2.0-or-later",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/leleat/create-gnome-extension.git"
+    "url": "git+https://github.com/Leleat/create-gnome-extension.git"
   },
   "bugs": {
-    "url": "https://github.com/leleat/create-gnome-extension/issues"
+    "url": "https://github.com/Leleat/create-gnome-extension/issues"
   },
-  "homepage": "https://github.com/leleat/create-gnome-extension",
+  "homepage": "https://github.com/Leleat/create-gnome-extension",
   "devDependencies": {
     "@biomejs/biome": "^1.8.3",
     "globals": "^15.6.0"

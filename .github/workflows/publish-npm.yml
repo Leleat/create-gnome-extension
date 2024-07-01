@@ -1,0 +1,33 @@
+name: Publish to npm
+run-name: Publish to npm
+
+# Trigger the workflow when a new release tag (v*) is pushed instead of when a
+# release is published as the default secrets.GITHUB_TOKEN does not trigger
+# another workflow according to https://github.com/softprops/action-gh-release?tab=readme-ov-file#permissions
+on:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  publish-npm:
+    permissions:
+      contents: read
+      id-token: write
+    name: Publish to npm
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20.x"
+          registry-url: "https://registry.npmjs.org"
+      - run: npm install -g npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Publish to npm
+        run: npm publish --provenance
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
