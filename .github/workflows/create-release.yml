@@ -17,15 +17,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: "20.x"
-      - name: Create tarball
-        run: npm pack
-      - name: Extract version number
-        id: extract_version
-        run: RELEASE_VERSION="${{ github.ref_name }}" && echo "RELEASE_VERSION=${RELEASE_VERSION#v}" >> $GITHUB_ENV
-      - name: Upload to Release
-        uses: Shopify/upload-to-release@v2.0.0
+      - name: Release
+        uses: softprops/action-gh-release@v2
         with:
-          name: create-gnome-extension
-          path: create-gnome-extension-$RELEASE_VERSION.tgz
-          repo-token: ${{ secrets.GITHUB_TOKEN }}
-          content-type: application/gzip
+          body: "Checkout the [CHANGELOG](https://github.com/Leleat/create-gnome-extension/blob/main/CHANGELOG.md) for all the details."
