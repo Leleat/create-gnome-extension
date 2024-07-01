@@ -3,8 +3,8 @@
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
 import * as process from 'node:process';
-import {parseArgs} from 'node:util';
 import readline from 'node:readline';
+import {parseArgs} from 'node:util';
 
 const RESET = '\x1b[0m';
 const BOLD = '\x1b[1m';
