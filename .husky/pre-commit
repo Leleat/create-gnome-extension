@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+
+npx biome check ./*.js > /dev/null

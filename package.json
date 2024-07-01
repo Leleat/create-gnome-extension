@@ -6,9 +6,10 @@
     "create-gnome-extension": "index.js"
   },
   "scripts": {
-    "check": "@biomejs/biome check ./*.js",
+    "check": "biome check ./*.js",
     "generate-changelog": "conventional-changelog -p angular -i CHANGELOG.md -s",
-    "bump-version": "./scripts/bump-version.js"
+    "bump-version": "./scripts/bump-version.js",
+    "prepare": "husky"
   },
   "files": [
     "template",
@@ -35,6 +36,7 @@
     "@biomejs/biome": "^1.8.3",
     "conventional-changelog-cli": "^5.0.0",
     "conventional-recommended-bump": "^10.0.0",
-    "globals": "^15.6.0"
+    "globals": "^15.6.0",
+    "husky": "^9.0.11"
   }
 }
