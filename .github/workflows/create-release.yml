@@ -21,7 +21,7 @@ jobs:
         run: npm pack
       - name: Extract version number
         id: extract_version
-        run: echo "RELEASE_VERSION=${${{ github.ref_name }}#v}" >> $GITHUB_ENV
+        run: RELEASE_VERSION="${{ github.ref_name }}" && echo "RELEASE_VERSION=${RELEASE_VERSION#v}" >> $GITHUB_ENV
       - name: Upload to Release
         uses: Shopify/upload-to-release@v2.0.0
         with:
