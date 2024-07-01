@@ -23,7 +23,7 @@
   "license": "GPL-2.0-or-later",
   "repository": {
     "type": "git",
-    "url": "https://github.com/leleat/create-gnome-extension.git"
+    "url": "https://github.com/leleat/create-gnome-extension"
   },
   "bugs": {
     "url": "https://github.com/leleat/create-gnome-extension/issues"
