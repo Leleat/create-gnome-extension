@@ -23,14 +23,14 @@ jobs:
           git filter-repo --message-callback '
             import re
 
-            trailer = "Part-of: ${{ github.event.pull_request.html_url }}"
+            trailer = b"Part-of: ${{ github.event.pull_request.html_url }}"
             lines = message.splitlines()
             has_trailer = lines and re.search(r"^[a-zA-Z\-]+: ", lines[-1]) is not None
 
             if has_trailer:
-              return message + f"\n{trailer}"
+              return message + b"\n{trailer}"
             else:
-              return message + f"\n\n{trailer}"
+              return message + b"\n\n{trailer}"
 
           ' --refs ${{github.event.pull_request.base.sha}}..HEAD
 
