@@ -15,7 +15,8 @@ if [[ ! $header =~ $regex ]] || [[ ${#header} -gt 100  ]]; then
     echo -e "         \x1b[1mTLDR:\x1b[0m The header must match \x1b[2m<type>(<scope>)!: <description>\x1b[0m. (<scope>)"
     echo "         and the breaking change indicator (the !) are optional. <type> and"
     echo "         <description> start with a lowercase letter and the lines may not"
-    echo "         exceed a certain length."
+    echo "         exceed 100 characters. The <type> must be one of the following:"
+    echo "         feat, fix, build, chore, ci, docs, style, refactor, perf, test."
     echo ""
 fi
 
