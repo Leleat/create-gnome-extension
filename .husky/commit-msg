@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+
+# https://www.conventionalcommits.org/en/v1.0.0/#summary
+regex='^(feat|fix|build|chore|ci|docs|style|refactor|perf|test)(\([a-z]+\))?!?: [a-z]+'
+header=$(head -n 1 < "$1")
+
+if [[ ! $header =~ $regex ]]; then
+    echo ""
+    echo -e "\x1b[1m\x1b[33mWARNING!\x1b[0m \x1b[3mcreate-gnome-extensions\x1b[0m follows the Conventional Commits spec so that"
+    echo "         the CHANGELOG can be generated automatically. To eventually pass the"
+    echo -e "         CI, follow \x1b[92mhttps://www.conventionalcommits.org/en/v1.0.0/#summary\x1b[0m"
+    echo ""
+    echo -e "         \x1b[1mTLDR:\x1b[0m The header must match \x1b[2m<type>(<scope>)!: <description>\x1b[0m. (<scope>)"
+    echo "         and the breaking change indicator (the !) are optional. <type> and"
+    echo "         <description> start with a lowercase letter."
+    echo ""
+fi
+
