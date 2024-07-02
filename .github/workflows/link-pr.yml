@@ -34,6 +34,6 @@ jobs:
             else:
               return message + f"\n\n{trailer}"
 
-          ' origin/main..HEAD
+          ' $(git rev-parse origin/main)..HEAD
 
           git push --force
