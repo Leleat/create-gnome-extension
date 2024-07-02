@@ -28,9 +28,9 @@ jobs:
             has_trailer = lines and re.search(r"^[a-zA-Z\-]+: ", lines[-1]) is not None
 
             if has_trailer:
-              return message + b"\n{trailer}"
+              return message + b"\n" + trailer
             else:
-              return message + b"\n\n{trailer}"
+              return message + b"\n\n" + trailer
 
           ' --refs ${{github.event.pull_request.base.sha}}..HEAD
 
