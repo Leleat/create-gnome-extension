@@ -1,11 +1,11 @@
-name: Format and Lint
+name: Check PR
 run-name: Check ${{ github.ref_name }} by @${{ github.actor }}
 
 on:
   pull_request:
 
 jobs:
-  check-format-and-lint:
+  format-and-lint:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -16,3 +16,20 @@ jobs:
           version: latest
       - name: Run Biome
         run: biome ci ./*.js
+  commit-message:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20.x"
+      - name: Install commitlint
+        run: |
+          npm install @commitlint/config-conventional @commitlint/cli
+          echo "export default {extends: ['@commitlint/config-conventional']};" > commitlint.config.js
+      - name: Lint commit messages
+        run: npx commitlint --from=$(git rev-parse origin/${{ github.base_ref}}) --to=HEAD
