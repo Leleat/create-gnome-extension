@@ -1,0 +1,39 @@
+name: Link PR in commit messages
+run-name: Link PR in commit messages
+
+on:
+  pull_request:
+    types: [closed]
+    branches:
+      - main
+
+jobs:
+  lin-pr:
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Install git-filter-repo
+        run: pip install git-filter-repo
+      - name: Append PR link to commit messages
+        run: |
+          PR_URL=${{ github.event.pull_request.html_url }}
+
+          git filter-repo --message-callback '
+            import re
+
+            trailer = f"Part-of: {os.environ['PR_URL']}"
+            lines = message.splitlines()
+            has_trailer = lines and re.search(r"^[a-zA-Z\-]+: ", lines[-1])
+
+            if has_trailer:
+              return message + f"\n{trailer}"
+            else:
+              return message + f"\n\n{trailer}"
+
+          ' origin/main..HEAD
+
+          git push --force

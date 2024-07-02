@@ -2,7 +2,7 @@
 
 if ! npx biome check ./*.js &> /dev/null; then
     echo ""
-    echo -e "\x1b[1m\x1b[33mWARNING!\x1b[0m Your source needs to be formatted and/or linted with Biome."
+    echo -e "\x1b[1m\x1b[33mWARNING!\x1b[0m Your code needs to be formatted and/or linted with Biome."
     echo "         Otherwise it won't pass the CI."
     echo ""
 fi
