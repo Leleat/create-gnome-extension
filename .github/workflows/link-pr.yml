@@ -20,20 +20,5 @@ jobs:
         run: pip install git-filter-repo
       - name: Append PR link to commit messages
         run: |
-          PR_URL=${{ github.event.pull_request.html_url }}
-
-          git filter-repo --message-callback '
-            import re
-
-            trailer = f"Part-of: {os.environ['PR_URL']}"
-            lines = message.splitlines()
-            has_trailer = lines and re.search(r"^[a-zA-Z\-]+: ", lines[-1])
-
-            if has_trailer:
-              return message + f"\n{trailer}"
-            else:
-              return message + f"\n\n{trailer}"
-
-          ' $(git rev-parse origin/main)..HEAD
-
-          git push --force
+          echo ${{github.event.pull_request.head.sha}}
+          echo ${{github.event.pull_request.base.sha}}
