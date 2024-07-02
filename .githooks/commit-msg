@@ -4,7 +4,9 @@
 regex='^(feat|fix|build|chore|ci|docs|style|refactor|perf|test)(\([a-z]+\))?!?: [a-z]+'
 header=$(head -n 1 < "$1")
 
-if [[ ! $header =~ $regex ]]; then
+# Just use an simplification of the Conventional Commits spec e. g. we don't
+# check for the length of the description etc.
+if [[ ! $header =~ $regex ]] || [[ ${#header} -gt 100  ]]; then
     echo ""
     echo -e "\x1b[1m\x1b[33mWARNING!\x1b[0m \x1b[3mcreate-gnome-extensions\x1b[0m follows the Conventional Commits spec so that"
     echo "         the CHANGELOG can be generated automatically. To eventually pass the"
@@ -12,7 +14,8 @@ if [[ ! $header =~ $regex ]]; then
     echo ""
     echo -e "         \x1b[1mTLDR:\x1b[0m The header must match \x1b[2m<type>(<scope>)!: <description>\x1b[0m. (<scope>)"
     echo "         and the breaking change indicator (the !) are optional. <type> and"
-    echo "         <description> start with a lowercase letter."
+    echo "         <description> start with a lowercase letter and the lines may not"
+    echo "         exceed a certain length."
     echo ""
 fi
 
