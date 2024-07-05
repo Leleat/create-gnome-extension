@@ -1,6 +1,6 @@
 {
   "name": "create-gnome-extension",
-  "version": "0.2.0",
+  "version": "1.0.0",
   "description": "Scaffolding tool for GNOME Shell extensions",
   "bin": {
     "create-gnome-extension": "index.js"
@@ -8,8 +8,7 @@
   "scripts": {
     "postinstall": "git config --local core.hooksPath .githooks",
     "check": "biome check ./*.js",
-    "generate-changelog": "conventional-changelog -p angular -i CHANGELOG.md -s",
-    "bump-version": "./scripts/bump-version.js"
+    "bump-version": "./scripts/bump-version.js && conventional-changelog -p angular -i CHANGELOG.md -s"
   },
   "files": [
     "template",
