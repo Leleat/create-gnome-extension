@@ -46,14 +46,10 @@ const CLI_OPTIONS = {
     'no-use-resources': {type: 'boolean'},
 };
 
-const isMainModule = import.meta.url.includes(process.argv[1]);
-
-if (isMainModule) {
-    main().catch((e) => {
-        console.error(e);
-        process.exit(1);
-    });
-}
+main().catch((e) => {
+    console.error(e);
+    process.exit(1);
+});
 
 /*******************************************************************************
  * Functions *******************************************************************
