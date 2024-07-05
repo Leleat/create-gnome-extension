@@ -1,61 +1,70 @@
 #!/usr/bin/env node
 
-import * as fs from 'node:fs/promises';
+import fs from 'node:fs/promises';
+import path from 'node:path';
 
 import {Bumper} from 'conventional-recommended-bump';
 
-const bumper = new Bumper(process.cwd()).loadPreset('angular');
-const recommendation = await bumper.bump();
-const packageJson = await fs.readFile('package.json', 'utf-8').then(JSON.parse);
-const prevVersion = packageJson.version;
+main().catch((error) => {
+    console.error(error);
+    process.exit(1);
+});
 
-switch (recommendation.releaseType) {
-    case 'major':
-        packageJson.version = packageJson.version.replace(
-            /(\d+).(\d+).(\d+)/,
-            (_, major) => `${Number(major) + 1}.0.0`,
-        );
+/*******************************************************************************
+ * Functions *******************************************************************
+ *******************************************************************************/
 
-        console.log(
-            'Major version bump: %s -> %s',
-            prevVersion,
-            packageJson.version,
-        );
+async function main() {
+    process.chdir(path.resolve(import.meta.dirname, '..'));
 
-        break;
+    const packageJsonPath = path.resolve(process.cwd(), 'package.json');
+    const packageJson = await fs
+        .readFile(packageJsonPath, 'utf-8')
+        .then(JSON.parse);
+    const bumper = new Bumper(process.cwd()).loadPreset('angular');
+    const recommendation = await bumper.bump();
+    const prevVersion = packageJson.version;
 
-    case 'minor':
-        packageJson.version = packageJson.version.replace(
-            /(\d+).(\d+).(\d+)/,
-            (_, major, minor) => `${major}.${Number(minor) + 1}.0`,
-        );
+    packageJson.version = getNewVersion(
+        prevVersion,
+        recommendation.releaseType,
+    );
 
-        console.log(
-            'Minor version bump: %s -> %s',
-            prevVersion,
-            packageJson.version,
-        );
+    await fs.writeFile(
+        packageJsonPath,
+        `${JSON.stringify(packageJson, null, 2)}\n`,
+    );
 
-        break;
-
-    case 'patch':
-        packageJson.version = packageJson.version.replace(
-            /(\d+).(\d+).(\d+)/,
-            (_, major, minor, patch) =>
-                `${major}.${minor}.${Number(patch) + 1}`,
-        );
-
-        console.log(
-            'Patch version bump: %s -> %s',
-            prevVersion,
-            packageJson.version,
-        );
-
-        break;
-
-    default:
-        console.log('Maybe someting went wrong... no changes detected');
-        process.exit(1);
+    console.log('Version bumped: %s -> %s', prevVersion, packageJson.version);
 }
 
-await fs.writeFile('package.json', `${JSON.stringify(packageJson, null, 2)}\n`);
+/**
+ * Gets the recommended new version number.
+ *
+ * @param {string} currentVersion - the current version number
+ * @param {string|undefined} releaseType - the release type of
+ *      BumperRecommendation
+ *
+ * @returns {string} - the recommended new version number
+ */
+function getNewVersion(currentVersion, releaseType) {
+    const versionRegex = /^(?<major>\d+)\.(?<minor>\d+)\.(?<patch>\d+)$/;
+    const match = currentVersion.match(versionRegex);
+
+    if (!match) {
+        throw new Error('Invalid version format in package.json');
+    }
+
+    const {major, minor, patch} = match.groups;
+
+    switch (releaseType) {
+        case 'major':
+            return `${Number(major) + 1}.0.0`;
+        case 'minor':
+            return `${major}.${Number(minor) + 1}.0`;
+        case 'patch':
+            return `${major}.${minor}.${Number(patch) + 1}`;
+        default:
+            throw new Error('Maybe someting went wrong... no changes detected');
+    }
+}
