@@ -52,9 +52,11 @@ function build_extension_package() {
 			exit 1
 		fi
 
-		echo "Removing old TypeScript dist/..."
-		rm -rf $TYPESCRIPT_OUT_DIR
-		echo "Done."
+		if find . -type d | grep -q "dist"; then
+			echo "Removing old TypeScript dist/..."
+			rm -rf $TYPESCRIPT_OUT_DIR
+			echo "Done."
+		fi
 
 		if ! (find . -type d | grep -q "node_modules"); then
 			echo "Installing dependencies from NPM to compile TypeScript..."
@@ -70,14 +72,16 @@ function build_extension_package() {
 		fi
 		echo "Done."
 
-		echo "Copying non-TypeScript src files to the dist directory..."
-		(
-			cd src/
-			find . -type f ! -name '*.ts' | while read -r FILE; do
-				cp --parents "$FILE" ../dist/
-			done
-		)
-		echo "Done."
+		if find src/ -type f | grep -qv ".ts"; then
+			echo "Copying non-TypeScript src files to the dist directory..."
+			(
+				cd src/
+				find . -type f ! -name '*.ts' | while read -r FILE; do
+					cp --parents "$FILE" ../dist/
+				done
+			)
+			echo "Done."
+		fi
 	fi
 
 	# Compile translations, if there are any
