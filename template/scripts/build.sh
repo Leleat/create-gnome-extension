@@ -44,26 +44,6 @@ function compile_translations() {
 }
 
 function build_extension_package() {
-	# Compile translations, if there are any
-	if find po/ | grep -q ".po$" ; then
-		if command -v msgfmt &> /dev/null; then
-			compile_translations
-		else
-			echo "WARNING: gettext isn't installed. Skipping compilation of translations..."
-		fi
-	fi
-
-	# Compile resources, if there are any
-	if find data/ -type f | grep -q "."; then
-		if command -v glib-compile-resources &> /dev/null; then
-			compile_resources
-		else
-			echo "ERROR: glib-compile-resources isn't installed. Resources won't be compiled. This may cause errors for the extension. Please install glib-compile-resources and rebuild the extension. Exiting..."
-
-			exit 1
-		fi
-	fi
-
 	# Compile TypeScript files, if used
 	if [ "$USING_TYPESCRIPT" = "true" ]; then
 		if ! (command -v npm &> /dev/null); then
@@ -72,9 +52,11 @@ function build_extension_package() {
 			exit 1
 		fi
 
-		echo "Removing old TypeScript dist/..."
-		rm -rf $TYPESCRIPT_OUT_DIR
-		echo "Done."
+		if find . -type d | grep -q "dist"; then
+			echo "Removing old TypeScript dist/..."
+			rm -rf $TYPESCRIPT_OUT_DIR
+			echo "Done."
+		fi
 
 		if ! (find . -type d | grep -q "node_modules"); then
 			echo "Installing dependencies from NPM to compile TypeScript..."
@@ -90,14 +72,36 @@ function build_extension_package() {
 		fi
 		echo "Done."
 
-		echo "Copying non-TypeScript src files to the dist directory..."
-		(
-			cd src/
-			find . -type f ! -name '*.ts' | while read -r FILE; do
-				cp --parents "$FILE" ../dist/
-			done
-		)
-		echo "Done."
+		if find src/ -type f | grep -qv ".ts"; then
+			echo "Copying non-TypeScript src files to the dist directory..."
+			(
+				cd src/
+				find . -type f ! -name '*.ts' | while read -r FILE; do
+					cp --parents "$FILE" ../dist/
+				done
+			)
+			echo "Done."
+		fi
+	fi
+
+	# Compile translations, if there are any
+	if (find po/ -type f | grep ".po$") &> /dev/null; then
+		if command -v msgfmt &> /dev/null; then
+			compile_translations
+		else
+			echo "WARNING: gettext isn't installed. Skipping compilation of translations..."
+		fi
+	fi
+
+	# Compile resources, if there are any
+	if (find data/ -type f | grep ".") &> /dev/null; then
+		if command -v glib-compile-resources &> /dev/null; then
+			compile_resources
+		else
+			echo "ERROR: glib-compile-resources isn't installed. Resources won't be compiled. This may cause errors for the extension. Please install glib-compile-resources and rebuild the extension. Exiting..."
+
+			exit 1
+		fi
 	fi
 
 	echo "Zipping files..."
