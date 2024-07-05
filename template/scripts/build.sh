@@ -52,20 +52,20 @@ function build_extension_package() {
 			exit 1
 		fi
 
-		if find . -type d | grep -q "dist"; then
+		if find . -maxdepth 1 -type d | grep -q "dist"; then
 			echo "Removing old TypeScript dist/..."
 			rm -rf $TYPESCRIPT_OUT_DIR
 			echo "Done."
 		fi
 
-		if ! (find . -type d | grep -q "node_modules"); then
+		if ! (find . -maxdepth 1 -type d | grep -q "node_modules"); then
 			echo "Installing dependencies from NPM to compile TypeScript..."
 			npm install --omit=dev > /dev/null
 			echo "Dependencies installed."
 		fi
 
 		echo "Compiling TypeScript files..."
-		if find . -type f | grep -q "scripts/esbuild.js"; then
+		if find scripts/ -type f | grep -q "esbuild.js"; then
 			node ./scripts/esbuild.js
 		else
 			npx tsc
