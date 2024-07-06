@@ -7,8 +7,9 @@
   },
   "scripts": {
     "postinstall": "git config --local core.hooksPath .githooks",
-    "check": "biome check ./*.js",
-    "bump-version": "./scripts/bump-version.js && conventional-changelog -p angular -i CHANGELOG.md -s"
+    "test": "vitest run --silent",
+    "bump-version": "./scripts/bump-version.js && conventional-changelog -p angular -i CHANGELOG.md -s",
+    "check": "biome check *.js tests/"
   },
   "files": [
     "template",
@@ -33,7 +34,9 @@
   "homepage": "https://github.com/Leleat/create-gnome-extension",
   "devDependencies": {
     "@biomejs/biome": "^1.8.3",
+    "@vitest/coverage-v8": "^1.6.0",
     "conventional-changelog-cli": "^5.0.0",
-    "conventional-recommended-bump": "^10.0.0"
+    "conventional-recommended-bump": "^10.0.0",
+    "vitest": "^1.6.0"
   }
 }

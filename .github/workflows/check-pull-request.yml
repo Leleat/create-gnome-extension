@@ -15,7 +15,7 @@ jobs:
         with:
           version: latest
       - name: Run Biome
-        run: biome ci ./*.js
+        run: biome ci *.js tests/
   commit-message:
     runs-on: ubuntu-latest
     steps:
