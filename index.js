@@ -3,53 +3,28 @@
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
 import * as process from 'node:process';
-import readline from 'node:readline';
-import {parseArgs} from 'node:util';
 
-const RESET = '\x1b[0m';
-const BOLD = '\x1b[1m';
-const FAINT = '\x1b[2m';
-const RED = '\x1b[31m';
-const YELLOW = '\x1b[33m';
-const GREEN = '\x1b[92m';
+import {
+    AnsiEscSeq,
+    Options as CliOptions,
+    getDefaultForOption,
+    getProcessedArgs,
+    isValidOption,
+    prompt,
+    promptYesOrNo,
+    useOption,
+} from './cli.js';
 
-const CLI_OPTIONS = {
-    'target-dir': {type: 'string'},
-    'project-name': {type: 'string'},
-    description: {type: 'string'},
-    'version-name': {type: 'string'},
-    license: {type: 'string'},
-    'home-page': {type: 'string'},
-    uuid: {type: 'string'},
-    'shell-version': {type: 'string'},
-    'use-typescript': {type: 'boolean'},
-    'no-use-typescript': {type: 'boolean'},
-    'use-esbuild': {type: 'boolean'},
-    'no-use-esbuild': {type: 'boolean'},
-    'use-types': {type: 'boolean'},
-    'no-use-types': {type: 'boolean'},
-    'use-eslint': {type: 'boolean'},
-    'no-use-eslint': {type: 'boolean'},
-    'use-prettier': {type: 'boolean'},
-    'no-use-prettier': {type: 'boolean'},
-    'use-translations': {type: 'boolean'},
-    'no-use-translations': {type: 'boolean'},
-    'gettext-domain': {type: 'string'},
-    'use-prefs': {type: 'boolean'},
-    'no-use-prefs': {type: 'boolean'},
-    'settings-schema': {type: 'string'},
-    'use-prefs-window': {type: 'boolean'},
-    'no-use-prefs-window': {type: 'boolean'},
-    'use-stylesheet': {type: 'boolean'},
-    'no-use-stylesheet': {type: 'boolean'},
-    'use-resources': {type: 'boolean'},
-    'no-use-resources': {type: 'boolean'},
-};
+const shouldExecute =
+    process.argv[1].endsWith('create-gnome-extension') ||
+    import.meta.url.includes(process.argv[1]);
 
-main().catch((e) => {
-    console.error(e);
-    process.exit(1);
-});
+if (shouldExecute) {
+    main().catch((e) => {
+        console.error(e);
+        process.exit(1);
+    });
+}
 
 /*******************************************************************************
  * Functions *******************************************************************
@@ -199,7 +174,7 @@ async function configureMandatoryFiles({
     ]);
 
     console.log(
-        `${GREEN}Project created at ${projectInfo['target-dir']}${RESET}`,
+        `${AnsiEscSeq.GREEN}Project created at ${projectInfo['target-dir']}${AnsiEscSeq.RESET}`,
     );
 
     if (
@@ -209,7 +184,7 @@ async function configureMandatoryFiles({
         projectInfo['use-types']
     ) {
         console.log(
-            `Run ${YELLOW}cd ${projectInfo['target-dir']} && npm i${RESET} to install the dependencies before you start coding.`,
+            `Run ${AnsiEscSeq.YELLOW}cd ${projectInfo['target-dir']} && npm i${AnsiEscSeq.RESET} to install the dependencies before you start coding.`,
         );
     }
 }
@@ -428,206 +403,32 @@ async function configureTypes({
 }
 
 /**
- * Gets the CLI arguments as an object that holds information about the project.
- * Conflicting options are resolved.
- *
- * @returns {Promise<object>} the parsed CLI arguments
- */
-async function getCleanCliArguments() {
-    const {
-        values: argv,
-        positionals,
-        tokens,
-    } = parseArgs({
-        args: process.argv.slice(2),
-        options: CLI_OPTIONS,
-        strict: false,
-        tokens: true,
-    });
-
-    tokens
-        .filter((token) => token.kind === 'option')
-        .forEach((token) => {
-            if (token.name.startsWith('no-')) {
-                const positiveName = token.name.slice(3);
-                argv[positiveName] = false;
-
-                delete argv[token.name];
-            } else {
-                // Resave value so last one wins if both --foo and --no-foo.
-                argv[token.name] = token.value ?? true;
-            }
-        });
-
-    // Resolve conflicts. And only 'root conflicts'. Those that are handled
-    // transively by other options are not checked here. E.g. handling of
-    // use-esbuild in a normal JS project isn't needed since it depends on
-    // use-typescript.
-    const conflictingOptions = [['use-typescript', 'use-types']];
-
-    for (const options of conflictingOptions) {
-        if (options.some((o) => argv[o])) {
-            options
-                .filter((o) => argv[o])
-                .slice(1)
-                .forEach((o) => delete argv[o]);
-        }
-    }
-
-    argv['target-dir'] = argv['target-dir'] ?? positionals[0];
-
-    for (const [key, value] of Object.entries(argv)) {
-        if (!(await isValidOption(key, value))) {
-            delete argv[key];
-        } else if (value === '') {
-            argv[key] = getDefaultForOption(key, argv);
-        }
-    }
-
-    return argv;
-}
-
-/**
- * Gets the default value for an option.
- *
- * @param {string} option - the option to get the default value for
- * @param {object} args - the arguments that holds the project infos. That
- *      information may be incomplete when the user didn't provide all options
- *      via the CLI.
- *
- * @returns {string|boolean} the default value for the option
- */
-function getDefaultForOption(option, args) {
-    switch (option) {
-        case 'description':
-        case 'project-name':
-        case 'shell-version':
-        case 'target-dir':
-        case 'uuid':
-            return undefined;
-
-        case 'home-page':
-            return '';
-
-        case 'version-name':
-            return '1.0.0';
-
-        case 'license':
-            return 'GPL-2.0-or-later';
-
-        case 'gettext-domain':
-        case 'settings-schema':
-            return args['uuid'];
-
-        case 'use-esbuild':
-        case 'use-eslint':
-        case 'use-prettier':
-            return true;
-
-        case 'use-prefs-window':
-        case 'use-prefs':
-        case 'use-resources':
-        case 'use-stylesheet':
-        case 'use-translations':
-        case 'use-types':
-        case 'use-typescript':
-            return false;
-
-        default:
-            console.warn(`Unknown option: ${option}`);
-    }
-}
-
-/**
  * Gets the information about the project based on the CLI arguments and user
- * input. Conflicting options are resolved.
+ * input. Conflicting options are resolved and superfluous options are removed.
+ * E. g. if the user passes `--use-esbuild` via CLI but chooses not to use TS,
+ * the option is removed.
  *
  * @returns {Promise<object>} the information object
  */
+// biome-ignore lint/suspicious/noFunctionAssign: So that we can export the function only for tests but keep it 'private' otherwise
 async function getProjectInfo() {
-    const cliArgs = await getCleanCliArguments();
+    const cliArgs = await getProcessedArgs();
     const projectInfo = {...cliArgs};
-    const positiveOptions = Object.keys(CLI_OPTIONS).filter(
+    const positiveOptions = Object.keys(CliOptions).filter(
         (o) => !o.startsWith('no-'),
     );
 
     for (const option of positiveOptions) {
-        if (
-            useOption(option, projectInfo) &&
-            projectInfo[option] === undefined
-        ) {
-            projectInfo[option] = await queryUserFor(option, projectInfo);
+        if (useOption(option, projectInfo)) {
+            projectInfo[option] =
+                projectInfo[option] ??
+                (await queryUserFor(option, projectInfo));
+        } else {
+            delete projectInfo[option];
         }
     }
 
     return projectInfo;
-}
-
-/**
- * Validates the value of an option.
- *
- * @param {string} option - the option to validate
- * @param {string} value - the value of the option to validate
- *
- * @returns {Promise<boolean>} whether the value is valid
- */
-async function isValidOption(option, value) {
-    if (value === undefined) {
-        return false;
-    }
-
-    switch (option) {
-        case 'gettext-domain':
-        case 'home-page':
-        case 'license':
-        case 'settings-schema':
-        case 'version-name':
-            return typeof value === 'string';
-
-        case 'use-esbuild':
-        case 'use-eslint':
-        case 'use-prefs-window':
-        case 'use-prefs':
-        case 'use-prettier':
-        case 'use-resources':
-        case 'use-stylesheet':
-        case 'use-translations':
-        case 'use-types':
-        case 'use-typescript':
-            return typeof value === 'boolean';
-
-        case 'description':
-        case 'project-name':
-        case 'uuid':
-            return typeof value === 'string' && /\w+/.test(value);
-
-        case 'target-dir':
-            try {
-                if (typeof value !== 'string') {
-                    return false;
-                }
-
-                await fs.access(path.resolve(value), fs.constants.F_OK);
-
-                return false;
-
-                // biome-ignore lint/correctness/noUnusedVariables: test
-            } catch (e) {
-                return true;
-            }
-
-        case 'shell-version':
-            return (
-                typeof value === 'string' &&
-                value
-                    .split(',')
-                    .map((v) => v.trim())
-                    .every((v) => /\d+/.test(v) && v >= 45)
-            );
-
-        default:
-            console.warn(`Unknown option: ${option}`);
-    }
 }
 
 /**
@@ -686,7 +487,7 @@ async function queryUserFor(option, partialProjectInfo) {
     switch (option) {
         case 'description':
             console.log(
-                `${FAINT}Enter a description, a single-sentence explanation of what your extension does${RESET}`,
+                `${AnsiEscSeq.FAINT}Enter a description, a single-sentence explanation of what your extension does${AnsiEscSeq.RESET}`,
             );
 
             return await prompt('Description:', {
@@ -709,7 +510,7 @@ async function queryUserFor(option, partialProjectInfo) {
 
         case 'home-page':
             console.log(
-                `${FAINT}Optionally, enter a homepage, for example, a Git repository${RESET}`,
+                `${AnsiEscSeq.FAINT}Optionally, enter a homepage, for example, a Git repository${AnsiEscSeq.RESET}`,
             );
 
             return await prompt('Homepage:', {
@@ -720,7 +521,9 @@ async function queryUserFor(option, partialProjectInfo) {
             });
 
         case 'license':
-            console.log(`${FAINT}Enter a SPDX License Identifier${RESET}`);
+            console.log(
+                `${AnsiEscSeq.FAINT}Enter a SPDX License Identifier${AnsiEscSeq.RESET}`,
+            );
 
             return await prompt('License:', {
                 defaultValue: getDefaultForOption(
@@ -731,7 +534,7 @@ async function queryUserFor(option, partialProjectInfo) {
 
         case 'project-name':
             console.log(
-                `${FAINT}Enter a project name. A name should be a short and descriptive string${RESET}`,
+                `${AnsiEscSeq.FAINT}Enter a project name. A name should be a short and descriptive string${AnsiEscSeq.RESET}`,
             );
 
             return await prompt('Project name:', {
@@ -754,7 +557,7 @@ async function queryUserFor(option, partialProjectInfo) {
 
         case 'shell-version':
             console.log(
-                `${FAINT}List the GNOME Shell versions that your extension supports in a comma-separated list of numbers >= 45. For example: 45,46,47${RESET}`,
+                `${AnsiEscSeq.FAINT}List the GNOME Shell versions that your extension supports in a comma-separated list of numbers >= 45. For example: 45,46,47${AnsiEscSeq.RESET}`,
             );
 
             return (
@@ -773,7 +576,9 @@ async function queryUserFor(option, partialProjectInfo) {
                 .filter((v) => v);
 
         case 'target-dir':
-            console.log(`${FAINT}Enter the path for your project${RESET}`);
+            console.log(
+                `${AnsiEscSeq.FAINT}Enter the path for your project${AnsiEscSeq.RESET}`,
+            );
 
             return path.resolve(
                 await prompt('Target directory:', {
@@ -789,7 +594,7 @@ async function queryUserFor(option, partialProjectInfo) {
 
         case 'uuid':
             console.log(
-                `${FAINT}Enter a UUID. The UUID is a globally-unique identifier for your extension. This should be in the format of an email address (clicktofocus@janedoe.example.com)${RESET}`,
+                `${AnsiEscSeq.FAINT}Enter a UUID. The UUID is a globally-unique identifier for your extension. This should be in the format of an email address (clicktofocus@janedoe.example.com)${AnsiEscSeq.RESET}`,
             );
 
             return await prompt('UUID:', {
@@ -800,7 +605,7 @@ async function queryUserFor(option, partialProjectInfo) {
 
         case 'use-esbuild':
             console.log(
-                `${FAINT}esbuild allows for faster builds but doesn't check your code during the build process. So you will need to rely on your editor's type checking or use \`npm run check:types\` manually. esbuild also comes with some caveats. Visit https://esbuild.github.io/content-types/#typescript-caveats for more information.${RESET}`,
+                `${AnsiEscSeq.FAINT}esbuild allows for faster builds but doesn't check your code during the build process. So you will need to rely on your editor's type checking or use \`npm run check:types\` manually. esbuild also comes with some caveats. Visit https://esbuild.github.io/content-types/#typescript-caveats for more information.${AnsiEscSeq.RESET}`,
             );
 
             return await promptYesOrNo('Add esbuild?', {
@@ -926,109 +731,6 @@ async function parseConfigJsons({templateLangDir, templatePath}) {
 }
 
 /**
- * Prompts the user for an input.
- *
- * @param {string} prompt - the prompt message shown to the user
- * @param {object} [param] - the options object
- * @param {Function} [param.validate] - the function that validates the input
- * @param {*} [param.defaultValue] - the value that is returned, if the user
- *      doesn't provide an input
- * @param {string} [param.onError] - the error message shown to the user, if
- *      the input doesn't pass the validation function
- *
- * @returns {Promise<string>} the user's input or the default value if the user
- *      doesn't provide an input
- */
-async function prompt(
-    prompt,
-    {
-        validate = async () => true,
-        defaultValue,
-        onError = 'Invalid input.',
-    } = {},
-) {
-    const defaultString =
-        defaultValue === undefined ? '' : ` (${defaultValue})`;
-    const lineReader = readline.createInterface({
-        input: process.stdin,
-        output: process.stdout,
-    });
-    const question = (str) =>
-        new Promise((resolve) => lineReader.question(str, resolve));
-    let input;
-
-    while (true) {
-        input = await question(
-            `${BOLD}${prompt}${RESET}${FAINT}${defaultString}${RESET} `,
-        );
-        input = input.trim();
-
-        if (input === '' && defaultValue !== undefined) {
-            input = defaultValue;
-            break;
-        }
-
-        if (await validate(input)) {
-            break;
-        }
-
-        console.log(`${RED}${onError}${RESET}`);
-    }
-
-    lineReader.close();
-
-    return input;
-}
-
-/**
- * Prompts the user for a yes or no answer.
- *
- * @param {string} prompt - the prompt message shown to the user
- * @param {boolean} [defaultValue] - the value that is returned, if the user doesn't
- *      provide an input
- *
- * @returns {Promise<boolean>} the user's choice
- */
-async function promptYesOrNo(prompt, {defaultValue = false} = {}) {
-    const option = defaultValue ? 'Y/n' : 'y/N';
-    const lineReader = readline.createInterface({
-        input: process.stdin,
-        output: process.stdout,
-    });
-    const question = (str) =>
-        new Promise((resolve) => lineReader.question(str, resolve));
-    let input;
-
-    while (true) {
-        input = await question(
-            `${BOLD}${prompt}${RESET} ${FAINT}[${option}]${RESET}: `,
-        );
-        input = input.trim().toLowerCase();
-
-        if (input === '') {
-            input = defaultValue;
-            break;
-        }
-
-        if (input === 'yes' || input === 'y') {
-            input = true;
-            break;
-        }
-
-        if (input === 'no' || input === 'n') {
-            input = false;
-            break;
-        }
-
-        console.log(`${RED}Please enter "y" or "n".${RESET}`);
-    }
-
-    lineReader.close();
-
-    return input;
-}
-
-/**
  * Turns a string into kebab-case.
  *
  * @param {string} string
@@ -1060,47 +762,8 @@ function toPascalCase(string) {
         .join('');
 }
 
-/**
- * Determines whether to use an option based on its relation to other options.
- *
- * @param {string} option - the option
- * @param {object} args - the arguments that holds the project infos. That
- *      information may be incomplete when the user didn't provide all options
- *      via the CLI.
- *
- * @returns {boolean}
- */
-function useOption(option, args) {
-    return {
-        description: true,
-        'gettext-domain': args['use-translations'],
-        'home-page': true,
-        license: true,
-        'no-use-esbuild': args['use-typescript'],
-        'no-use-eslint': true,
-        'no-use-prefs-window': args['use-prefs'],
-        'no-use-prefs': true,
-        'no-use-prettier': true,
-        'no-use-resources': true,
-        'no-use-stylesheet': true,
-        'no-use-translations': true,
-        'no-use-types': !args['use-typescript'],
-        'no-use-typescript': !args['use-types'],
-        'project-name': true,
-        'settings-schema': args['use-prefs'],
-        'shell-version': true,
-        'target-dir': true,
-        'use-esbuild': args['use-typescript'],
-        'use-eslint': true,
-        'use-prefs-window': args['use-prefs'],
-        'use-prefs': true,
-        'use-prettier': true,
-        'use-resources': true,
-        'use-stylesheet': true,
-        'use-translations': true,
-        'use-types': !args['use-typescript'],
-        'use-typescript': !args['use-types'],
-        uuid: true,
-        'version-name': true,
-    }[option];
+if (process.env.VITEST !== 'true') {
+    getProjectInfo = undefined;
 }
+
+export {getProjectInfo};

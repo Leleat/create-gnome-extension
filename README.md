@@ -34,6 +34,7 @@ You will be asked some questions to determine which files to include in your pro
 --settings-schema=<string> # Defaults to <uuid> on empty string
 --shell-version=<string> # comma-separated list of numbers >= 45
 --[no-]use-typescript
+--[no-]use-esbuild
 --[no-]use-eslint
 --[no-]use-prettier
 --[no-]use-types
