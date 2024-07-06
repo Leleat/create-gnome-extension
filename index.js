@@ -46,10 +46,16 @@ const CLI_OPTIONS = {
     'no-use-resources': {type: 'boolean'},
 };
 
-main().catch((e) => {
-    console.error(e);
-    process.exit(1);
-});
+const shouldExecute =
+    process.argv[1].endsWith('create-gnome-extension') ||
+    import.meta.url.includes(process.argv[1]);
+
+if (shouldExecute) {
+    main().catch((e) => {
+        console.error(e);
+        process.exit(1);
+    });
+}
 
 /*******************************************************************************
  * Functions *******************************************************************
