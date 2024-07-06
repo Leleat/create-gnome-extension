@@ -60,7 +60,7 @@ function build_extension_package() {
 
 		if ! (find . -maxdepth 1 -type d | grep -q "node_modules"); then
 			echo "Installing dependencies from NPM to compile TypeScript..."
-			npm install --omit=dev > /dev/null
+			npm install > /dev/null
 			echo "Dependencies installed."
 		fi
 
