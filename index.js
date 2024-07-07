@@ -378,7 +378,11 @@ async function configureTypes({
                     ),
                 );
             } else {
-                tsconfigJson['compilerOptions']['isolatedModules'] = undefined;
+                packageJson.devDependencies['esbuild'] = undefined;
+                packageJson.devDependencies['esbuild-plugin-tsc'] = undefined;
+                tsconfigJson.compilerOptions['isolatedModules'] = undefined;
+                tsconfigJson.compilerOptions['experimentalDecorators'] =
+                    undefined;
             }
 
             await fs.writeFile(
@@ -605,7 +609,7 @@ async function queryUserFor(option, partialProjectInfo) {
 
         case 'use-esbuild':
             console.log(
-                `${AnsiEscSeq.FAINT}esbuild allows for faster builds but doesn't check your code during the build process. So you will need to rely on your editor's type checking or use \`npm run check:types\` manually. esbuild also comes with some caveats. Visit https://esbuild.github.io/content-types/#typescript-caveats for more information.${AnsiEscSeq.RESET}`,
+                `${AnsiEscSeq.FAINT}esbuild allows for faster builds but doesn't check your code during the build process. So you will need to rely on your editor's type checking or use \`npm run check:types\` manually. esbuild also comes with some caveats. E. g. esbuild doesn't support stage 3 decorators, so you will use TypeScripts experimental stage 2 decorators. Visit https://esbuild.github.io/content-types/#typescript-caveats for more.${AnsiEscSeq.RESET}`,
             );
 
             return await promptYesOrNo('Add esbuild?', {

@@ -37,7 +37,7 @@ jobs:
             last_line_is_trailer = lines and re.search(b"^\w+: ", lines[-1]) is not None
 
             if not lines:
-              return trailer
+              return b"\n" + trailer
             elif last_line_is_trailer:
               return message.strip() + b"\n" + trailer
             else:
