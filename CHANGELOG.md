@@ -1,3 +1,15 @@
+## [0.9.2](https://github.com/Leleat/create-gnome-extension/compare/v0.9.1...v0.9.2) (2024-07-07)
+
+
+### Bug Fixes
+
+* be more specific with `find` in build.sh ([0a1860e](https://github.com/Leleat/create-gnome-extension/commit/0a1860ed9070c48ad6ec641ffe5ae64094213066))
+* don't skip installing devDependencies in build script ([661c588](https://github.com/Leleat/create-gnome-extension/commit/661c58823a019fd0dabac365199866d27085a38d))
+* only execute main function when running as a script ([0384f90](https://github.com/Leleat/create-gnome-extension/commit/0384f906672a775af1718684db4322a37f8415c3))
+* use of decorators in TypeScript with esbuild ([d2c094c](https://github.com/Leleat/create-gnome-extension/commit/d2c094cfd00e647a625ad5b6feef6af244bac336))
+
+
+
 ## [0.9.1](https://github.com/Leleat/create-gnome-extension/compare/v0.9.0...v0.9.1) (2024-07-05)
 
 
