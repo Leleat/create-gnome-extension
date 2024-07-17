@@ -1,6 +1,6 @@
 import {afterEach, beforeEach, describe, expect, it} from 'vitest';
 
-import {getProcessedArgs} from '../cli.js';
+import {getProcessedArgs} from '../src/cli.js';
 
 describe('Processing CLI arguments', () => {
     let originalArgv;
