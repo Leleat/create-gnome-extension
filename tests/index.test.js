@@ -9,10 +9,10 @@ import {
     vi,
 } from 'vitest';
 
-import {getProjectInfo} from '../index.js';
+import {getProjectInfo} from '../src/index.js';
 
 beforeAll(() => {
-    vi.mock('../cli.js', async (importOriginal) => {
+    vi.mock('../src/cli.js', async (importOriginal) => {
         const original = await importOriginal();
 
         return {

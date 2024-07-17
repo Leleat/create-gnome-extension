@@ -168,7 +168,7 @@ async function configureMandatoryFiles({
             JSON.stringify(packageJson, null, 2),
         ),
         fs.copyFile(
-            path.join(import.meta.dirname, 'README.md'),
+            path.join(import.meta.dirname, '..', 'README.md'),
             path.join(projectInfo['target-dir'], 'README.md'),
         ),
     ]);
@@ -450,7 +450,7 @@ async function main() {
         }),
     ]);
 
-    const templatePath = path.resolve(import.meta.dirname, 'template');
+    const templatePath = path.resolve(import.meta.dirname, '..', 'template');
     const templateLangDir = projectInfo['use-typescript']
         ? 'template.ts'
         : 'template.js';
