@@ -219,18 +219,16 @@ async function configurePrefs({
             `org.gnome.shell.extensions.${name}.gschema.xml`,
         );
 
-        await Promise.all([
-            fs.mkdir(schemasDirPath, {recursive: true}),
-            fs.writeFile(
-                filePath,
-                // biome-ignore lint/style/useTemplate: to keep the indents here
-                '<?xml version="1.0" encoding="UTF-8"?>\n' +
-                    '<schemalist>\n' +
-                    `    <schema id="org.gnome.shell.extensions.${name}" path="/org/gnome/shell/extensions/${name}/">\n` +
-                    '    </schema>\n' +
-                    '</schemalist>',
-            ),
-        ]);
+        await fs.mkdir(schemasDirPath, {recursive: true});
+        await fs.writeFile(
+            filePath,
+            // biome-ignore lint/style/useTemplate: to keep the indents here
+            '<?xml version="1.0" encoding="UTF-8"?>\n' +
+                '<schemalist>\n' +
+                `    <schema id="org.gnome.shell.extensions.${name}" path="/org/gnome/shell/extensions/${name}/">\n` +
+                '    </schema>\n' +
+                '</schemalist>',
+        );
 
         metadataJson['settings-schema'] =
             projectInfo['settings-schema'] || projectInfo['uuid'];
