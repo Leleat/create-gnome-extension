@@ -6,10 +6,10 @@
     "create-gnome-extension": "src/index.js"
   },
   "scripts": {
-    "postinstall": "git config --local core.hooksPath .githooks",
     "test": "vitest run --silent",
     "bump-version": "./scripts/bump-version.js && conventional-changelog -p angular -i CHANGELOG.md -s",
-    "check": "biome check src/ tests/"
+    "check": "biome check src/ tests/",
+    "hookup": "git config --local core.hooksPath .githooks"
   },
   "files": [
     "template",
