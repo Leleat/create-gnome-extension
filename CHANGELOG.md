@@ -1,3 +1,13 @@
+## [0.9.4](https://github.com/Leleat/create-gnome-extension/compare/v0.9.3...v0.9.4) (2024-07-17)
+
+
+### Bug Fixes
+
+* change "mandatory" postinstall to optional hookup script ([7d68a73](https://github.com/Leleat/create-gnome-extension/commit/7d68a7357f6da961c084e64856c7010b5e427e12))
+* fix creation of file before directory ([42167da](https://github.com/Leleat/create-gnome-extension/commit/42167da43f2fff9f3130ec60fd568ad67096cb97))
+
+
+
 ## [0.9.3](https://github.com/Leleat/create-gnome-extension/compare/v0.9.2...v0.9.3) (2024-07-17)
 
 
