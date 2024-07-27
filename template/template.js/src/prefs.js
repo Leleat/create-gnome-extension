@@ -7,7 +7,7 @@ export default class $PLACEHOLDER$ extends ExtensionPreferences {
      * @returns {Promise<Gtk.Widget>} The widget that implements the extension's
      *      preferences.
      */
-    getPreferencesWidget() {
+    async getPreferencesWidget() {
         // Alternetively, you can use the `fillPreferencesWindow` method for
         // more control over the preferences window. Only implement one of the
         // methods.
@@ -20,7 +20,7 @@ export default class $PLACEHOLDER$ extends ExtensionPreferences {
      *
      * @returns {Promise<void>}
      */
-    // fillPreferencesWindow(window) {
+    // async fillPreferencesWindow(window) {
     //     The default implementation adds the widget returned by `getPreferencesWidget`.
     // }
 }

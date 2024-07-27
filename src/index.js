@@ -244,12 +244,21 @@ async function configurePrefs({
                     'utf-8',
                 )
                 .then(async (fileContent) => {
+                    let content = fileContent.replace(
+                        /\$PLACEHOLDER\$/,
+                        `${toPascalCase(projectInfo['project-name'])}Prefs`,
+                    );
+                    const minShellVersion = projectInfo['shell-version'].reduce(
+                        (prev, curr) => Math.min(prev, curr),
+                    );
+
+                    if (minShellVersion < 47) {
+                        content = content.replaceAll('async ', '');
+                    }
+
                     await fs.writeFile(
                         path.join(projectInfo['target-dir'], 'src', prefsFile),
-                        fileContent.replace(
-                            /\$PLACEHOLDER\$/,
-                            `${toPascalCase(projectInfo['project-name'])}Prefs`,
-                        ),
+                        content,
                     );
                 });
         }
