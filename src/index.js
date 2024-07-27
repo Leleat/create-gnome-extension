@@ -15,6 +15,8 @@ import {
     useOption,
 } from './cli.js';
 
+import {PackageDependencies} from './package.versions.js';
+
 const shouldExecute =
     process.argv[1].endsWith('create-gnome-extension') ||
     import.meta.url.includes(process.argv[1]);
@@ -131,6 +133,17 @@ async function configureMandatoryFiles({
     const extFile = projectInfo['use-typescript']
         ? 'extension.ts'
         : 'extension.js';
+    const minShellVersion = projectInfo['shell-version'].reduce((prev, curr) =>
+        Math.min(prev, curr),
+    );
+    const versionedDeps = PackageDependencies[minShellVersion];
+
+    if (versionedDeps) {
+        packageJson.devDependencies = {
+            ...packageJson.devDependencies,
+            ...versionedDeps,
+        };
+    }
 
     await Promise.all([
         fs
@@ -244,12 +257,21 @@ async function configurePrefs({
                     'utf-8',
                 )
                 .then(async (fileContent) => {
+                    let content = fileContent.replace(
+                        /\$PLACEHOLDER\$/,
+                        `${toPascalCase(projectInfo['project-name'])}Prefs`,
+                    );
+                    const minShellVersion = projectInfo['shell-version'].reduce(
+                        (prev, curr) => Math.min(prev, curr),
+                    );
+
+                    if (minShellVersion < 47) {
+                        content = content.replaceAll('async ', '');
+                    }
+
                     await fs.writeFile(
                         path.join(projectInfo['target-dir'], 'src', prefsFile),
-                        fileContent.replace(
-                            /\$PLACEHOLDER\$/,
-                            `${toPascalCase(projectInfo['project-name'])}Prefs`,
-                        ),
+                        content,
                     );
                 });
         }
