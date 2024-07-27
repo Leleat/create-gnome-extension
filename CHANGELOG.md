@@ -1,3 +1,17 @@
+# [0.10.0](https://github.com/Leleat/create-gnome-extension/compare/v0.9.4...v0.10.0) (2024-07-27)
+
+
+### Bug Fixes
+
+* preference methods being async ([332c517](https://github.com/Leleat/create-gnome-extension/commit/332c5174d1efa5a8d4143be5fb068ee473d07396))
+
+
+### Features
+
+* add versioning for gnome-shell and gjs types ([d771d41](https://github.com/Leleat/create-gnome-extension/commit/d771d415abf6ff1c71ac4a440b48a952e9771dd5))
+
+
+
 ## [0.9.4](https://github.com/Leleat/create-gnome-extension/compare/v0.9.3...v0.9.4) (2024-07-17)
 
 
