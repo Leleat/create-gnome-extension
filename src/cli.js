@@ -6,11 +6,11 @@ import {parseArgs} from 'node:util';
 const Options = {
     'target-dir': {type: 'string'},
     'project-name': {type: 'string'},
-    'description': {type: 'string'},
+    description: {type: 'string'},
     'version-name': {type: 'string'},
-    'license': {type: 'string'},
+    license: {type: 'string'},
     'home-page': {type: 'string'},
-    'uuid': {type: 'string'},
+    uuid: {type: 'string'},
     'shell-version': {type: 'string'},
     'use-typescript': {type: 'boolean'},
     'no-use-typescript': {type: 'boolean'},
@@ -212,9 +212,7 @@ async function isValidOption(option, value) {
                 await fs.access(path.resolve(value), fs.constants.F_OK);
 
                 return false;
-
-                // biome-ignore lint/correctness/noUnusedVariables: test
-            } catch (e) {
+            } catch {
                 return true;
             }
 
@@ -349,10 +347,10 @@ async function promptYesOrNo(prompt, {defaultValue = false} = {}) {
  */
 function useOption(option, args) {
     const options = {
-        'description': true,
+        description: true,
         'gettext-domain': args['use-translations'],
         'home-page': true,
-        'license': true,
+        license: true,
         'no-use-esbuild': args['use-typescript'],
         'no-use-eslint': true,
         'no-use-prefs-window': args['use-prefs'],
@@ -377,7 +375,7 @@ function useOption(option, args) {
         'use-translations': true,
         'use-types': !args['use-typescript'],
         'use-typescript': !args['use-types'],
-        'uuid': true,
+        uuid: true,
         'version-name': true,
     };
 

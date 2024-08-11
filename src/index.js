@@ -130,9 +130,8 @@ async function configureMandatoryFiles({
         metadataJson['url'] = projectInfo['home-page'];
     }
 
-    const extFile = projectInfo['use-typescript']
-        ? 'extension.ts'
-        : 'extension.js';
+    const extFile =
+        projectInfo['use-typescript'] ? 'extension.ts' : 'extension.js';
     const minShellVersion = projectInfo['shell-version'].reduce((prev, curr) =>
         Math.min(prev, curr),
     );
@@ -235,7 +234,6 @@ async function configurePrefs({
         await fs.mkdir(schemasDirPath, {recursive: true});
         await fs.writeFile(
             filePath,
-            // biome-ignore lint/style/useTemplate: to keep the indents here
             '<?xml version="1.0" encoding="UTF-8"?>\n' +
                 '<schemalist>\n' +
                 `    <schema id="org.gnome.shell.extensions.${name}" path="/org/gnome/shell/extensions/${name}/">\n` +
@@ -247,9 +245,8 @@ async function configurePrefs({
             projectInfo['settings-schema'] || projectInfo['uuid'];
 
         if (projectInfo['use-prefs-window']) {
-            const prefsFile = projectInfo['use-typescript']
-                ? 'prefs.ts'
-                : 'prefs.js';
+            const prefsFile =
+                projectInfo['use-typescript'] ? 'prefs.ts' : 'prefs.js';
 
             await fs
                 .readFile(
@@ -434,7 +431,6 @@ async function configureTypes({
  *
  * @returns {Promise<object>} the information object
  */
-// biome-ignore lint/suspicious/noFunctionAssign: So that we can export the function only for tests but keep it 'private' otherwise
 async function getProjectInfo() {
     const cliArgs = await getProcessedArgs();
     const projectInfo = {...cliArgs};
@@ -471,9 +467,8 @@ async function main() {
     ]);
 
     const templatePath = path.resolve(import.meta.dirname, '..', 'template');
-    const templateLangDir = projectInfo['use-typescript']
-        ? 'template.ts'
-        : 'template.js';
+    const templateLangDir =
+        projectInfo['use-typescript'] ? 'template.ts' : 'template.js';
     const [metadataJson, packageJson, tsconfigJson] = await parseConfigJsons({
         templatePath,
         templateLangDir,
@@ -787,6 +782,7 @@ function toPascalCase(string) {
 }
 
 if (process.env.VITEST !== 'true') {
+    // eslint-disable-next-line no-func-assign -- export only for testing
     getProjectInfo = undefined;
 }
 
