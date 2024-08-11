@@ -44,9 +44,9 @@ describe('Processing CLI arguments', () => {
         const expected = {
             'target-dir': 'target-dir',
             'version-name': '1.0.0',
-            'uuid': uuid,
+            uuid: uuid,
             'home-page': '',
-            'license': 'GPL-2.0-or-later',
+            license: 'GPL-2.0-or-later',
             'use-typescript': true,
             'use-prefs': false,
             'use-prefs-window': true,
