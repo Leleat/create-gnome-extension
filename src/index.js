@@ -139,9 +139,17 @@ async function configureMandatoryFiles({
     const versionedDeps = PackageDependencies[minShellVersion];
 
     if (versionedDeps) {
+        const deps = Object.keys(packageJson.devDependencies).reduce(
+            (d, key) => {
+                d[key] = versionedDeps[key] ?? packageJson.devDependencies[key];
+                return d;
+            },
+            {},
+        );
+
         packageJson.devDependencies = {
             ...packageJson.devDependencies,
-            ...versionedDeps,
+            ...deps,
         };
     }
 
