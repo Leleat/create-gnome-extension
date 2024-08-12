@@ -6,10 +6,9 @@
     "create-gnome-extension": "src/index.js"
   },
   "scripts": {
-    "test": "vitest run --silent",
     "bump-version": "./scripts/bump-version.js && conventional-changelog -p angular -i CHANGELOG.md -s",
-    "check:format": "prettier -c src/ tests/",
-    "check:lint": "eslint src/ tests/",
+    "check:format": "prettier -c src/",
+    "check:lint": "eslint src/",
     "hookup": "git config --local core.hooksPath .githooks"
   },
   "files": [
@@ -35,13 +34,17 @@
   "homepage": "https://github.com/Leleat/create-gnome-extension",
   "devDependencies": {
     "@eslint/js": "^9.9.0",
-    "@vitest/coverage-v8": "^1.6.0",
     "conventional-changelog-cli": "^5.0.0",
     "conventional-recommended-bump": "^10.0.0",
     "eslint": "^9.9.0",
     "eslint-config-prettier": "^9.1.0",
     "globals": "^15.9.0",
-    "prettier": "^3.3.3",
-    "vitest": "^1.6.0"
+    "prettier": "^3.3.3"
+  },
+  "dependencies": {
+    "lodash.camelcase": "^4.3.0",
+    "lodash.kebabcase": "^4.1.1",
+    "lodash.upperfirst": "^4.3.1",
+    "prompts": "^2.4.2"
   }
 }

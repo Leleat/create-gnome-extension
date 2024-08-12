@@ -20,30 +20,7 @@ To use `create-gnome-extension` run the following command in a terminal.
 npm create gnome-extension@latest
 ```
 
-You will be asked some questions to determine which files to include in your project. Alternatively, you can also directly pass in the following arguments.
-
-```sh
---target-dir=<string> # Or use the first positional argument
---project-name=<string> # Non-empty string
---description=<string> # Non-empty string
---version-name=<string> # Defaults to 1.0.0 on empty string
---license=<string> # Defaults to GPL-2.0-or-later on empty string
---home-page=<string> # Empty string allowed
---uuid=<string> # Non-empty string
---gettext-domain=<string> # Defaults to <uuid> on empty string
---settings-schema=<string> # Defaults to <uuid> on empty string
---shell-version=<string> # comma-separated list of numbers >= 45
---[no-]use-typescript
---[no-]use-esbuild
---[no-]use-eslint
---[no-]use-prettier
---[no-]use-types
---[no-]use-translations
---[no-]use-prefs
---[no-]use-prefs-window
---[no-]use-stylesheet
---[no-]use-resources
-```
+You will be asked some questions to determine which files to include in your project.
 
 ## Project Structure
 

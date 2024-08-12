@@ -1,21 +1,23 @@
 #!/usr/bin/env node
 
+import toCamelCase from 'lodash.camelcase';
+import toKebabCase from 'lodash.kebabcase';
+import toFirstUpper from 'lodash.upperfirst';
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
 import * as process from 'node:process';
-
-import {
-    AnsiEscSeq,
-    Options as CliOptions,
-    getDefaultForOption,
-    getProcessedArgs,
-    isValidOption,
-    prompt,
-    promptYesOrNo,
-    useOption,
-} from './cli.js';
+import prompts from 'prompts';
 
 import {PackageDependencies} from './package.versions.js';
+
+const AnsiEscSeq = {
+    RESET: '\x1b[0m',
+    BOLD: '\x1b[1m',
+    FAINT: '\x1b[2m',
+    RED: '\x1b[31m',
+    YELLOW: '\x1b[33m',
+    GREEN: '\x1b[92m',
+};
 
 const shouldExecute =
     process.argv[1].endsWith('create-gnome-extension') ||
@@ -50,18 +52,18 @@ async function configureEslint({
     templateLangDir,
     templatePath,
 }) {
-    if (projectInfo['use-eslint']) {
-        if (!projectInfo['use-typescript']) {
+    if (projectInfo.useEslint) {
+        if (!projectInfo.useTypeScript) {
             await fs.cp(
                 path.join(templatePath, 'template.js', 'lint'),
-                path.join(projectInfo['target-dir'], 'lint'),
+                path.join(projectInfo.targetDir, 'lint'),
                 {recursive: true},
             );
         }
 
         await fs.copyFile(
             path.join(templatePath, templateLangDir, 'eslint.config.js'),
-            path.join(projectInfo['target-dir'], 'eslint.config.js'),
+            path.join(projectInfo.targetDir, 'eslint.config.js'),
         );
     } else {
         packageJson.scripts['check:lint'] = undefined;
@@ -88,10 +90,10 @@ async function configureEslint({
  * @returns {Promise<void>}
  */
 async function configureGresources({projectInfo, templatePath}) {
-    if (projectInfo['use-resources']) {
+    if (projectInfo.useResources) {
         await fs.cp(
             path.join(templatePath, 'data'),
-            path.join(projectInfo['target-dir'], 'data'),
+            path.join(projectInfo.targetDir, 'data'),
             {recursive: true},
         );
     }
@@ -117,30 +119,37 @@ async function configureMandatoryFiles({
     templateLangDir,
     templatePath,
 }) {
-    metadataJson['name'] = projectInfo['project-name'];
-    metadataJson['description'] = projectInfo['description'];
-    metadataJson['uuid'] = projectInfo['uuid'];
-    metadataJson['shell-version'] = projectInfo['shell-version'];
+    metadataJson['name'] = projectInfo.projectName;
+    metadataJson['description'] = projectInfo.description;
+    metadataJson['uuid'] = projectInfo.uuid;
+    metadataJson['shell-version'] = projectInfo.shellVersions;
 
-    if (projectInfo['version-name']) {
-        metadataJson['version-name'] = projectInfo['version-name'];
+    if (projectInfo.versionName) {
+        metadataJson['version-name'] = projectInfo.versionName;
     }
 
-    if (projectInfo['home-page']) {
-        metadataJson['url'] = projectInfo['home-page'];
+    if (projectInfo.homepage) {
+        metadataJson['url'] = projectInfo.homepage;
     }
 
-    const extFile =
-        projectInfo['use-typescript'] ? 'extension.ts' : 'extension.js';
-    const minShellVersion = projectInfo['shell-version'].reduce((prev, curr) =>
+    const extFile = projectInfo.useTypeScript ? 'extension.ts' : 'extension.js';
+    const minShellVersion = projectInfo.shellVersions.reduce((prev, curr) =>
         Math.min(prev, curr),
     );
     const versionedDeps = PackageDependencies[minShellVersion];
 
     if (versionedDeps) {
+        const deps = Object.keys(packageJson.devDependencies).reduce(
+            (d, key) => {
+                d[key] = versionedDeps[key] ?? packageJson.devDependencies[key];
+                return d;
+            },
+            {},
+        );
+
         packageJson.devDependencies = {
             ...packageJson.devDependencies,
-            ...versionedDeps,
+            ...deps,
         };
     }
 
@@ -152,51 +161,51 @@ async function configureMandatoryFiles({
             )
             .then(async (fileContent) => {
                 await fs.writeFile(
-                    path.join(projectInfo['target-dir'], 'src', extFile),
+                    path.join(projectInfo.targetDir, 'src', extFile),
                     fileContent.replace(
                         /\$PLACEHOLDER\$/,
-                        toPascalCase(projectInfo['project-name']),
+                        toPascalCase(projectInfo.projectName),
                     ),
                 );
             }),
         fs.copyFile(
             path.join(templatePath, '_gitignore'),
-            path.join(projectInfo['target-dir'], '.gitignore'),
+            path.join(projectInfo.targetDir, '.gitignore'),
         ),
         fs.copyFile(
             path.join(templatePath, '.editorconfig'),
-            path.join(projectInfo['target-dir'], '.editorconfig'),
+            path.join(projectInfo.targetDir, '.editorconfig'),
         ),
         fs.copyFile(
             path.join(templatePath, 'scripts', 'build.sh'),
-            path.join(projectInfo['target-dir'], 'scripts', 'build.sh'),
+            path.join(projectInfo.targetDir, 'scripts', 'build.sh'),
         ),
         fs.writeFile(
-            path.join(projectInfo['target-dir'], 'metadata.json'),
+            path.join(projectInfo.targetDir, 'metadata.json'),
             JSON.stringify(metadataJson, null, 2),
         ),
         fs.writeFile(
-            path.join(projectInfo['target-dir'], 'package.json'),
+            path.join(projectInfo.targetDir, 'package.json'),
             JSON.stringify(packageJson, null, 2),
         ),
         fs.copyFile(
             path.join(import.meta.dirname, '..', 'README.md'),
-            path.join(projectInfo['target-dir'], 'README.md'),
+            path.join(projectInfo.targetDir, 'README.md'),
         ),
     ]);
 
     console.log(
-        `${AnsiEscSeq.GREEN}Project created at ${projectInfo['target-dir']}${AnsiEscSeq.RESET}`,
+        `${AnsiEscSeq.GREEN}Project created at ${projectInfo.targetDir}${AnsiEscSeq.RESET}`,
     );
 
     if (
-        projectInfo['use-typescript'] ||
-        projectInfo['use-eslint'] ||
-        projectInfo['use-prettier'] ||
-        projectInfo['use-types']
+        projectInfo.useTypeScript ||
+        projectInfo.useEslint ||
+        projectInfo.usePrettier ||
+        projectInfo.useTypes
     ) {
         console.log(
-            `Run ${AnsiEscSeq.YELLOW}cd ${projectInfo['target-dir']} && npm i${AnsiEscSeq.RESET} to install the dependencies before you start coding.`,
+            `Run ${AnsiEscSeq.YELLOW}cd ${projectInfo.targetDir} && npm i${AnsiEscSeq.RESET} to install the dependencies before you start coding.`,
         );
     }
 }
@@ -219,10 +228,10 @@ async function configurePrefs({
     templateLangDir,
     templatePath,
 }) {
-    if (projectInfo['use-prefs']) {
-        const name = toKebabCase(projectInfo['project-name']);
+    if (projectInfo.usePrefs) {
+        const name = toKebabCase(projectInfo.projectName);
         const schemasDirPath = path.join(
-            projectInfo['target-dir'],
+            projectInfo.targetDir,
             'src',
             'schemas',
         );
@@ -242,11 +251,11 @@ async function configurePrefs({
         );
 
         metadataJson['settings-schema'] =
-            projectInfo['settings-schema'] || projectInfo['uuid'];
+            projectInfo.settingsSchema || projectInfo.uuid;
 
-        if (projectInfo['use-prefs-window']) {
+        if (projectInfo.usePrefsWindow) {
             const prefsFile =
-                projectInfo['use-typescript'] ? 'prefs.ts' : 'prefs.js';
+                projectInfo.useTypeScript ? 'prefs.ts' : 'prefs.js';
 
             await fs
                 .readFile(
@@ -256,9 +265,9 @@ async function configurePrefs({
                 .then(async (fileContent) => {
                     let content = fileContent.replace(
                         /\$PLACEHOLDER\$/,
-                        `${toPascalCase(projectInfo['project-name'])}Prefs`,
+                        `${toPascalCase(projectInfo.projectName)}Prefs`,
                     );
-                    const minShellVersion = projectInfo['shell-version'].reduce(
+                    const minShellVersion = projectInfo.shellVersions.reduce(
                         (prev, curr) => Math.min(prev, curr),
                     );
 
@@ -267,7 +276,7 @@ async function configurePrefs({
                     }
 
                     await fs.writeFile(
-                        path.join(projectInfo['target-dir'], 'src', prefsFile),
+                        path.join(projectInfo.targetDir, 'src', prefsFile),
                         content,
                     );
                 });
@@ -286,19 +295,19 @@ async function configurePrefs({
  * @returns {Promise<void>}
  */
 async function configurePrettier({packageJson, projectInfo, templatePath}) {
-    if (projectInfo['use-prettier']) {
+    if (projectInfo.usePrettier) {
         await Promise.all([
             fs.copyFile(
                 path.join(templatePath, 'prettier.config.js'),
-                path.join(projectInfo['target-dir'], 'prettier.config.js'),
+                path.join(projectInfo.targetDir, 'prettier.config.js'),
             ),
             fs.copyFile(
                 path.join(templatePath, '.prettierignore'),
-                path.join(projectInfo['target-dir'], '.prettierignore'),
+                path.join(projectInfo.targetDir, '.prettierignore'),
             ),
         ]);
 
-        if (!projectInfo['use-eslint']) {
+        if (!projectInfo.useEslint) {
             packageJson.devDependencies['eslint-config-prettier'] = undefined;
         }
     } else {
@@ -317,9 +326,9 @@ async function configurePrettier({packageJson, projectInfo, templatePath}) {
  * @returns {Promise<void>}
  */
 async function configureStylesheet({projectInfo}) {
-    if (projectInfo['use-stylesheet']) {
+    if (projectInfo.useStylesheet) {
         await fs.writeFile(
-            path.join(projectInfo['target-dir'], 'src', 'stylesheet.css'),
+            path.join(projectInfo.targetDir, 'src', 'stylesheet.css'),
             '',
         );
     }
@@ -342,17 +351,17 @@ async function configureTranslations({
     projectInfo,
     templatePath,
 }) {
-    if (projectInfo['use-translations']) {
+    if (projectInfo.useTranslations) {
         await Promise.all([
             fs.cp(
                 path.join(templatePath, 'po'),
-                path.join(projectInfo['target-dir'], 'po'),
+                path.join(projectInfo.targetDir, 'po'),
                 {recursive: true},
             ),
             fs.copyFile(
                 path.join(templatePath, 'scripts', 'update-translations.sh'),
                 path.join(
-                    projectInfo['target-dir'],
+                    projectInfo.targetDir,
                     'scripts',
                     'update-translations.sh',
                 ),
@@ -360,7 +369,7 @@ async function configureTranslations({
         ]);
 
         metadataJson['gettext-domain'] =
-            projectInfo['gettext-domain'] || projectInfo['uuid'];
+            projectInfo.gettextDomain || projectInfo.uuid;
     } else {
         packageJson.scripts['translations:update'] = undefined;
     }
@@ -383,16 +392,12 @@ async function configureTypes({
     templatePath,
     tsconfigJson,
 }) {
-    if (projectInfo['use-types'] || projectInfo['use-typescript']) {
-        if (projectInfo['use-typescript']) {
-            if (projectInfo['use-esbuild']) {
+    if (projectInfo.useTypes || projectInfo.useTypeScript) {
+        if (projectInfo.useTypeScript) {
+            if (projectInfo.useEsbuild) {
                 await fs.copyFile(
                     path.join(templatePath, 'scripts', 'esbuild.js'),
-                    path.join(
-                        projectInfo['target-dir'],
-                        'scripts',
-                        'esbuild.js',
-                    ),
+                    path.join(projectInfo.targetDir, 'scripts', 'esbuild.js'),
                 );
             } else {
                 packageJson.devDependencies['esbuild'] = undefined;
@@ -403,19 +408,19 @@ async function configureTypes({
             }
 
             await fs.writeFile(
-                path.join(projectInfo['target-dir'], 'tsconfig.json'),
+                path.join(projectInfo.targetDir, 'tsconfig.json'),
                 JSON.stringify(tsconfigJson, null, 2),
             );
         } else {
             await fs.copyFile(
                 path.join(templatePath, 'template.js', 'jsconfig.json'),
-                path.join(projectInfo['target-dir'], 'jsconfig.json'),
+                path.join(projectInfo.targetDir, 'jsconfig.json'),
             );
         }
 
         await fs.copyFile(
             path.join(templatePath, 'ambient.d.ts'),
-            path.join(projectInfo['target-dir'], 'ambient.d.ts'),
+            path.join(projectInfo.targetDir, 'ambient.d.ts'),
         );
     } else {
         packageJson.devDependencies['@girs/gjs'] = undefined;
@@ -431,44 +436,191 @@ async function configureTypes({
  *
  * @returns {Promise<object>} the information object
  */
-async function getProjectInfo() {
-    const cliArgs = await getProcessedArgs();
-    const projectInfo = {...cliArgs};
-    const positiveOptions = Object.keys(CliOptions).filter(
-        (o) => !o.startsWith('no-'),
-    );
+async function queryProjectInfo() {
+    const questions = [
+        {
+            type: 'text',
+            name: 'targetDir',
+            message: 'Enter the path for your project',
+            validate: async (value) =>
+                fs
+                    .access(path.resolve(value), fs.constants.F_OK)
+                    .then(() => 'Directory already exists.')
+                    .catch(() => true),
+        },
+        {
+            type: 'text',
+            name: 'projectName',
+            message: 'Enter a project name',
+            validate: (value) =>
+                /\w+/.test(value) || 'The project name is required.',
+        },
+        {
+            type: 'text',
+            name: 'description',
+            message: 'Enter a short description of what your extension does',
+            validate: (value) =>
+                /\w+/.test(value) || 'The description is required.',
+        },
+        {
+            type: 'text',
+            name: 'versionName',
+            message: 'Enter the initial version name of your extension',
+            initial: '1.0.0',
+        },
+        {
+            type: 'text',
+            name: 'license',
+            message: 'License of your project',
+            initial: 'GPL-3.0-or-later',
+        },
+        {
+            type: 'text',
+            name: 'homepage',
+            message: 'Homepage',
+            initial: '',
+        },
+        {
+            type: 'text',
+            name: 'uuid',
+            message:
+                'Enter a UUID, a globally-unique identifier, for your extension',
+            validate: (value) => /\w+/.test(value) || 'The UUID is required.',
+        },
+        {
+            type: 'list',
+            name: 'shellVersions',
+            message:
+                'Enter the GNOME Shell versions your extension supports as a comma-separated list of numbers',
+            validate: (value) =>
+                value
+                    .split(',')
+                    .map((v) => v.trim())
+                    .every((v) => /\d+/.test(v) && v >= 45),
+        },
+        {
+            type: 'toggle',
+            name: 'useTypeScript',
+            message: 'Use TypeScript?',
+            active: 'yes',
+            inactive: 'no',
+            initial: false,
+        },
+        {
+            type: (prev, values) => (values.useTypeScript ? 'toggle' : null),
+            name: 'useEsbuild',
+            message: 'Use esbuild?',
+            active: 'yes',
+            inactive: 'no',
+            initial: true,
+        },
+        {
+            type: (prev, values) => (values.useTypeScript ? null : 'toggle'),
+            name: 'useTypes',
+            message:
+                'Add GNOME API types to JavaScript with gjsify/ts-for-gir?',
+            active: 'yes',
+            inactive: 'no',
+            initial: false,
+        },
+        {
+            type: 'toggle',
+            name: 'useEslint',
+            message: 'Add ESlint?',
+            active: 'yes',
+            inactive: 'no',
+            initial: true,
+        },
+        {
+            type: 'toggle',
+            name: 'usePrettier',
+            message: 'Add Prettier?',
+            active: 'yes',
+            inactive: 'no',
+            initial: true,
+        },
+        {
+            type: 'toggle',
+            name: 'useTranslations',
+            message: 'Do you want to offer translations for your extension?',
+            active: 'yes',
+            inactive: 'no',
+            initial: false,
+        },
+        {
+            type: (prev, values) => (values.useTranslations ? 'text' : null),
+            name: 'gettextDomain',
+            message: 'Enter a gettext domain',
+            initial: (prev, values) => values.uuid,
+            validate: (value) =>
+                /\w+/.test(value) || 'The gettext domain is required.',
+        },
+        {
+            type: 'toggle',
+            name: 'usePrefs',
+            message: 'Add a preferences to your extensions with gsettings?',
+            active: 'yes',
+            inactive: 'no',
+            initial: false,
+        },
+        {
+            type: (prev, values) => (values.usePrefs ? 'text' : null),
+            name: 'settingsSchema',
+            message: 'Enter a settings schema',
+            initial: (prev, values) => values.uuid,
+            validate: (value) => /\w+/.test(value) || 'The schema is required.',
+        },
+        {
+            type: (prev, values) => (values.usePrefs ? 'toggle' : null),
+            name: 'usePrefsWindow',
+            message: 'Add a preferences window?',
+            active: 'yes',
+            inactive: 'no',
+            initial: true,
+        },
+        {
+            type: 'toggle',
+            name: 'useStylesheet',
+            message: 'Use a stylesheet?',
+            active: 'yes',
+            inactive: 'no',
+            initial: false,
+        },
+        {
+            type: 'toggle',
+            name: 'useResources',
+            message: 'Use GResources?',
+            active: 'yes',
+            inactive: 'no',
+            initial: false,
+        },
+    ];
 
-    for (const option of positiveOptions) {
-        if (useOption(option, projectInfo)) {
-            projectInfo[option] =
-                projectInfo[option] ??
-                (await queryUserFor(option, projectInfo));
-        } else {
-            delete projectInfo[option];
-        }
-    }
-
-    return projectInfo;
+    return await prompts(questions, {
+        onCancel: () => {
+            throw new Error('Creation of the project was canceled.');
+        },
+    });
 }
 
 /**
  * Creates a new GNOME Shell extension skeleton project.
  */
 async function main() {
-    const projectInfo = await getProjectInfo();
+    const projectInfo = await queryProjectInfo();
 
     await Promise.all([
-        fs.mkdir(path.join(projectInfo['target-dir'], 'src'), {
+        fs.mkdir(path.join(projectInfo.targetDir, 'src'), {
             recursive: true,
         }),
-        fs.mkdir(path.join(projectInfo['target-dir'], 'scripts'), {
+        fs.mkdir(path.join(projectInfo.targetDir, 'scripts'), {
             recursive: true,
         }),
     ]);
 
     const templatePath = path.resolve(import.meta.dirname, '..', 'template');
     const templateLangDir =
-        projectInfo['use-typescript'] ? 'template.ts' : 'template.js';
+        projectInfo.useTypeScript ? 'template.ts' : 'template.js';
     const [metadataJson, packageJson, tsconfigJson] = await parseConfigJsons({
         templatePath,
         templateLangDir,
@@ -491,232 +643,6 @@ async function main() {
     await configureGresources(data);
     await configureStylesheet(data);
     await configureMandatoryFiles(data);
-}
-
-/**
- * Queries the user for an option.
- *
- * @param {string} option - the option to query the user for
- * @param {object} partialProjectInfo - the information about the project that
- *    has been gathered so far
- *
- * @returns {Promise<string|boolean>} the user's input for the option
- */
-async function queryUserFor(option, partialProjectInfo) {
-    switch (option) {
-        case 'description':
-            console.log(
-                `${AnsiEscSeq.FAINT}Enter a description, a single-sentence explanation of what your extension does${AnsiEscSeq.RESET}`,
-            );
-
-            return await prompt('Description:', {
-                validate: async (input) =>
-                    await isValidOption('description', input),
-                defaultValue: getDefaultForOption(
-                    'description',
-                    partialProjectInfo,
-                ),
-                onError: 'Description cannot be empty.',
-            });
-
-        case 'gettext-domain':
-            return await prompt('Enter gettext domain:', {
-                defaultValue: getDefaultForOption(
-                    'gettext-domain',
-                    partialProjectInfo,
-                ),
-            });
-
-        case 'home-page':
-            console.log(
-                `${AnsiEscSeq.FAINT}Optionally, enter a homepage, for example, a Git repository${AnsiEscSeq.RESET}`,
-            );
-
-            return await prompt('Homepage:', {
-                defaultValue: getDefaultForOption(
-                    'home-page',
-                    partialProjectInfo,
-                ),
-            });
-
-        case 'license':
-            console.log(
-                `${AnsiEscSeq.FAINT}Enter a SPDX License Identifier${AnsiEscSeq.RESET}`,
-            );
-
-            return await prompt('License:', {
-                defaultValue: getDefaultForOption(
-                    'license',
-                    partialProjectInfo,
-                ),
-            });
-
-        case 'project-name':
-            console.log(
-                `${AnsiEscSeq.FAINT}Enter a project name. A name should be a short and descriptive string${AnsiEscSeq.RESET}`,
-            );
-
-            return await prompt('Project name:', {
-                validate: async (input) =>
-                    await isValidOption('project-name', input),
-                defaultValue: getDefaultForOption(
-                    'project-name',
-                    partialProjectInfo,
-                ),
-                onError: 'Project name cannot be empty.',
-            });
-
-        case 'settings-schema':
-            return await prompt('Enter settings schema:', {
-                defaultValue: getDefaultForOption(
-                    'settings-schema',
-                    partialProjectInfo,
-                ),
-            });
-
-        case 'shell-version':
-            console.log(
-                `${AnsiEscSeq.FAINT}List the GNOME Shell versions that your extension supports in a comma-separated list of numbers >= 45. For example: 45,46,47${AnsiEscSeq.RESET}`,
-            );
-
-            return (
-                await prompt('Supported GNOME Shell versions:', {
-                    validate: (input) => isValidOption('shell-version', input),
-                    defaultValue: getDefaultForOption(
-                        'shell-version',
-                        partialProjectInfo,
-                    ),
-                    onError:
-                        'The supported GNOME Shell versions should be a comma-separated list of numbers >= 45.',
-                })
-            )
-                .split(',')
-                .map((v) => v.trim())
-                .filter((v) => v);
-
-        case 'target-dir':
-            console.log(
-                `${AnsiEscSeq.FAINT}Enter the path for your project${AnsiEscSeq.RESET}`,
-            );
-
-            return path.resolve(
-                await prompt('Target directory:', {
-                    validate: async (input) =>
-                        await isValidOption('target-dir', input),
-                    defaultValue: getDefaultForOption(
-                        'target-dir',
-                        partialProjectInfo,
-                    ),
-                    onError: 'Enter a path to a directory that does not exist.',
-                }),
-            );
-
-        case 'uuid':
-            console.log(
-                `${AnsiEscSeq.FAINT}Enter a UUID. The UUID is a globally-unique identifier for your extension. This should be in the format of an email address (clicktofocus@janedoe.example.com)${AnsiEscSeq.RESET}`,
-            );
-
-            return await prompt('UUID:', {
-                validate: async (input) => await isValidOption('uuid', input),
-                defaultValue: getDefaultForOption('uuid', partialProjectInfo),
-                onError: 'UUID cannot be empty.',
-            });
-
-        case 'use-esbuild':
-            console.log(
-                `${AnsiEscSeq.FAINT}esbuild allows for faster builds but doesn't check your code during the build process. So you will need to rely on your editor's type checking or use \`npm run check:types\` manually. esbuild also comes with some caveats. E. g. esbuild doesn't support stage 3 decorators, so you will use TypeScripts experimental stage 2 decorators. Visit https://esbuild.github.io/content-types/#typescript-caveats for more.${AnsiEscSeq.RESET}`,
-            );
-
-            return await promptYesOrNo('Add esbuild?', {
-                defaultValue: getDefaultForOption(
-                    'use-esbuild',
-                    partialProjectInfo,
-                ),
-            });
-
-        case 'use-eslint':
-            return await promptYesOrNo('Add ESlint?', {
-                defaultValue: getDefaultForOption(
-                    'use-eslint',
-                    partialProjectInfo,
-                ),
-            });
-
-        case 'use-prefs':
-            return await promptYesOrNo('Add preferences?', {
-                defaultValue: getDefaultForOption(
-                    'use-prefs',
-                    partialProjectInfo,
-                ),
-            });
-
-        case 'use-prefs-window':
-            return await promptYesOrNo('Add preference window?', {
-                defaultValue: getDefaultForOption(
-                    'use-prefs-window',
-                    partialProjectInfo,
-                ),
-            });
-
-        case 'use-prettier':
-            return await promptYesOrNo('Add Prettier?', {
-                defaultValue: getDefaultForOption(
-                    'use-prettier',
-                    partialProjectInfo,
-                ),
-            });
-
-        case 'use-resources':
-            return await promptYesOrNo('Use GResources?', {
-                defaultValue: getDefaultForOption(
-                    'use-resources',
-                    partialProjectInfo,
-                ),
-            });
-
-        case 'use-stylesheet':
-            return await promptYesOrNo('Add a stylesheet?', {
-                defaultValue: getDefaultForOption(
-                    'use-stylesheet',
-                    partialProjectInfo,
-                ),
-            });
-
-        case 'use-translations':
-            return await promptYesOrNo('Add translations?', {
-                defaultValue: getDefaultForOption(
-                    'use-translations',
-                    partialProjectInfo,
-                ),
-            });
-
-        case 'use-types':
-            return await promptYesOrNo(
-                'Add types to JavaScript with gjsify/ts-for-gir?',
-                {
-                    defaultValue: getDefaultForOption(
-                        'use-types',
-                        partialProjectInfo,
-                    ),
-                },
-            );
-
-        case 'use-typescript':
-            return await promptYesOrNo('Add TypeScript?', {
-                defaultValue: getDefaultForOption(
-                    'use-typescript',
-                    partialProjectInfo,
-                ),
-            });
-
-        case 'version-name':
-            return await prompt('Version:', {
-                defaultValue: getDefaultForOption(
-                    'version-name',
-                    partialProjectInfo,
-                ),
-            });
-    }
 }
 
 /**
@@ -750,22 +676,6 @@ async function parseConfigJsons({templateLangDir, templatePath}) {
 }
 
 /**
- * Turns a string into kebab-case.
- *
- * @param {string} string
- *
- * @returns {string} the string in kebab-case
- */
-function toKebabCase(string) {
-    return string
-        .split(/[ _-]/)
-        .map((v) => v.trim())
-        .filter((v) => v)
-        .join('-')
-        .toLowerCase();
-}
-
-/**
  * Turns a string into PascalCase.
  *
  * @param {string} string - the input string
@@ -773,17 +683,5 @@ function toKebabCase(string) {
  * @returns {string} - the string in PascalCase
  */
 function toPascalCase(string) {
-    return string
-        .split(/[ _-]/)
-        .map((v) => v.trim())
-        .filter((v) => v)
-        .map((word) => word[0].toUpperCase() + word.slice(1).toLowerCase())
-        .join('');
+    return toFirstUpper(toCamelCase(string));
 }
-
-if (process.env.VITEST !== 'true') {
-    // eslint-disable-next-line no-func-assign -- export only for testing
-    getProjectInfo = undefined;
-}
-
-export {getProjectInfo};
