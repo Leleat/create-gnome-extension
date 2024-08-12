@@ -1,3 +1,26 @@
+# [1.0.0](https://github.com/Leleat/create-gnome-extension/compare/v0.10.0...v1.0.0) (2024-08-12)
+
+
+### Bug Fixes
+
+* limit versioned deps to actual deps in package.json ([1533add](https://github.com/Leleat/create-gnome-extension/commit/1533addba0ed99d5a3d2481849e637e87f534b15))
+
+
+### Features
+
+* use prompts package for a nicer CLI experience ([f7727f2](https://github.com/Leleat/create-gnome-extension/commit/f7727f28c06f048fae9625dabf66efbf23685c49))
+
+
+### BREAKING CHANGES
+
+* While migrating to `prompts` I removed the option to pass
+arguments directly to the CLI. This was done because I don't expect any
+use case where this would be necessary and it simplifies the code a bit.
+
+Part-of: https://github.com/Leleat/create-gnome-extension/pull/57
+
+
+
 # [0.10.0](https://github.com/Leleat/create-gnome-extension/compare/v0.9.4...v0.10.0) (2024-07-27)
 
 
