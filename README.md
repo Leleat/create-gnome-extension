@@ -1,5 +1,9 @@
 # create-gnome-extension
 
+Project moved to https://gitlab.gnome.org/World/javascript/create-gnome-extension
+
+---
+
 `create-gnome-extension` is a community maintained scaffolding tool to build GNOME Shell extensions.
 
 ## Developing a GNOME Shell extension
